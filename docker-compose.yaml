@@ -1,40 +1,40 @@
 version: '3.9'
 services:
-  api:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-      #args:
-        # none needed
-    image: ${NEXUS_DOCKER_REPO}/acv-configs-api${TAG}
-    container_name: api_configs
-    restart: always
-    volumes:
-      - ./app:/app
-      - /mnt/ACVConfigs:/ACVConfigs
-    environment:
-      - HTTP_PROXY
-      - HTTPS_PROXY
-      - FTP_PROXY
-      - MONGO_INITDB_ROOT_USERNAME
-      - MONGO_INITDB_ROOT_PASSWORD 
-      - TAG
-    command: uvicorn api:app --reload --host 0.0.0.0 --port 8000
-    ports:
-      - "3000:8000"
-    links:
-      - mongo
+  #api:
+  #  build:
+  #    context: .
+  #    dockerfile: ./Dockerfile
+  #    #args:
+  #      # none needed
+  #  image: ${NEXUS_DOCKER_REPO}/acv-configs-api${TAG}
+  #  container_name: api_configs
+  #  restart: always
+  #  volumes:
+  #    - ./app:/app
+  #    - /mnt/ACVConfigs:/ACVConfigs
+  #  environment:
+  #    - HTTP_PROXY
+  #    - HTTPS_PROXY
+  #    - FTP_PROXY
+  #    - MONGO_INITDB_ROOT_USERNAME
+  #    - MONGO_INITDB_ROOT_PASSWORD 
+  #    - TAG
+  #  command: uvicorn api:app --reload --host 0.0.0.0 --port 8000
+  #  ports:
+  #    - "3000:8000"
+  #  links:
+  #    - mongo
       
-  mongo:
-    image: mongo
-    command: mongod
+  db:
     restart: always
-    container_name: dataBase
-    ports:
-      - "27020:27017"
+    container_name: mysql
+    image: mysql
+    ports: 
+      - '3310:3306'
     environment:
-      - MONGO_INITDB_ROOT_USERNAME
-      - MONGO_INITDB_ROOT_PASSWORD 
-    
+      - MYSQL_DATABASE=${MYSQL_DB}
+      - MYSQL_USER=${SQL_ADMIN_USERNAME}
+      - MYSQL_PASSWORD=${SQL_ADMIN_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${SQL_ROOT_PASSWORD}
     volumes:
-      - ./back/db-data:/data/db
+      - ../.volumes/.mysql:/var/lib/mysql
