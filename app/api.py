@@ -1,11 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
-from routes.cars import car
-from routes.configs import cfg
-from routes.projects import prj
-from routes.usages import usg
-from routes.users import usr
 
 description = """
 ## This is an API to manage the Movie database 2024.
