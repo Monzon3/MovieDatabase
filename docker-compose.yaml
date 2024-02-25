@@ -1,0 +1,40 @@
+version: '3.9'
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      #args:
+        # none needed
+    image: ${NEXUS_DOCKER_REPO}/acv-configs-api${TAG}
+    container_name: api_configs
+    restart: always
+    volumes:
+      - ./app:/app
+      - /mnt/ACVConfigs:/ACVConfigs
+    environment:
+      - HTTP_PROXY
+      - HTTPS_PROXY
+      - FTP_PROXY
+      - MONGO_INITDB_ROOT_USERNAME
+      - MONGO_INITDB_ROOT_PASSWORD 
+      - TAG
+    command: uvicorn api:app --reload --host 0.0.0.0 --port 8000
+    ports:
+      - "3000:8000"
+    links:
+      - mongo
+      
+  mongo:
+    image: mongo
+    command: mongod
+    restart: always
+    container_name: dataBase
+    ports:
+      - "27020:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME
+      - MONGO_INITDB_ROOT_PASSWORD 
+    
+    volumes:
+      - ./back/db-data:/data/db

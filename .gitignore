@@ -1,0 +1,9 @@
+# General
+__pycache__/
+
+# App files
+.env
+/app/myUser.json
+
+# Docker files
+.volumes/
