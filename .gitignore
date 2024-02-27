@@ -4,6 +4,7 @@ __pycache__/
 # App files
 .env
 /app/myUser.json
+/resources/carteles/
 
 # Docker files
 .volumes/

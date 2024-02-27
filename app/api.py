@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+import functions.dbConnector as dbConnector
 import os
 
 description = """
@@ -23,6 +24,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+[conn, db] = dbConnector.connect_to_db()    # Object to connect with MySQL
+
 @app.get("/")
 async def root():
     return {"Info": "Go to /docs URL for more info on the API"}
+
+@app.get("/test")
+async def test():
+    return {'a': 'b'}
