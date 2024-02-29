@@ -24,12 +24,42 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-[conn, db] = dbConnector.connect_to_db()    # Object to connect with MySQL
-
 @app.get("/")
 async def root():
     return {"Info": "Go to /docs URL for more info on the API"}
 
-@app.get("/test")
-async def test():
-    return {'a': 'b'}
+@app.get("/get_user")
+async def test(username:str):
+    return dbConnector.get_user(username)
+
+@app.get("/get_all_users")
+async def get_all_users():
+    return dbConnector.get_all_users() 
+
+@app.get("/devices")
+async def devices():
+    return dbConnector.get_all('Storage')
+
+@app.get("/qualities")
+async def qualities():
+    return dbConnector.get_all('Qualities')
+
+@app.get("/countries")
+async def countries():
+    return dbConnector.get_all('Countries')
+
+@app.get("/genres")
+async def genres():
+    return dbConnector.get_all_genres()
+
+@app.get("/quality_in_device")
+async def quality_in_device():
+    return {'quality_in_device'}
+
+@app.get("country_in_device")
+async def country_in_device():
+    return {'country_in_device'}
+
+@app.get("device_in_country")
+async def device_in_country():
+    return {'device_in_country'}

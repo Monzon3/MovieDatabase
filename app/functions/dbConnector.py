@@ -14,9 +14,9 @@ load_dotenv()
 
 def connect_to_db():
     MySQL_hostname = 'db'   # The name of the mysql Docker container
-    sql_username = os.getenv("SQL_ADMIN_USERNAME")
-    sql_password = os.getenv("SQL_ADMIN_PASSWORD")
-    sql_database = os.getenv("MYSQL_DB")
+    sql_username = os.getenv("MYSQL_USER")
+    sql_password = os.getenv("MYSQL_PASSWORD")
+    sql_database = os.getenv("MYSQL_DATABASE")
 
     # Connect with the database
     connector = pymysql.connect(host=MySQL_hostname,
@@ -31,13 +31,53 @@ def connect_to_db():
     return connector, cursor
 
 
-def get_user(user):
-    [conn, db] = dbConnector.connect_to_db()
-    sql_query = '''SELECT Users.Name, Users.Password, Users.Email FROM MovieDB.Users
-                WHERE Users.Name={user}'''
+def get_user(user:str):
+    [conn, db] = connect_to_db()
+    sql_query = f'''SELECT Users.Name, Users.Password, Users.Email FROM MovieDB.Users
+                WHERE Users.Name="{user}";'''
 
     db.execute(sql_query)
-    return db.fetchone()
+    res = db.fetchone()
+    return {'Name': res[0], 'Password': res[1], 'e-mail':res[2]}
+
+
+def get_all_users():
+    [conn, db] = connect_to_db()
+    sql_query =f'''SELECT Users.Name, Users.Email FROM MovieDB.Users;'''
+
+    db.execute(sql_query)
+    res = db.fetchall()
+
+    users_list = [list(res[i]) for i in range(len(res))]
+
+    return users_list
+
+
+def get_all(table:str):
+    [conn, db] = connect_to_db()
+    sql_query =f'''SELECT * FROM MovieDB.{table};'''
+    print(sql_query)
+
+    db.execute(sql_query)
+    res = db.fetchall()
+
+    obj_list = [res[i][1] for i in range(len(res))]
+
+    return obj_list
+
+def get_all_genres():
+    [conn, db] = connect_to_db()
+    sql_query = '''SELECT MovieDB.Genres.Name, MovieDB.Genre_Categories.Category 
+                   FROM MovieDB.Genres
+                   INNER JOIN MovieDB.Genre_Categories 
+                   ON MovieDB.Genres.CategoryID = MovieDB.Genre_Categories.id;'''
+
+    db.execute(sql_query)
+    res = db.fetchall()
+    
+    genres_list = [('[' + str(res[i][1]) + '] ' + str(res[i][0])) for i in range(len(res))]
+
+    return genres_list
 
 
 #    # General methods for objects
