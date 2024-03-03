@@ -2,9 +2,13 @@
 __pycache__/
 
 # App files
-.env
 /app/myUser.json
 /resources/carteles/
 
 # Docker files
 .volumes/
+
+#Aux files
+0_dockerBuild.bat
+1_dockerUp.bat
+2_dockerDown.bat
