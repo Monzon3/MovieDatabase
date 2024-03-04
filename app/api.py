@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 import functions.dbConnector as dbConnector
 import os
+from routes.users import usr
 
 description = """
 ## This is an API to manage the Movie database 2024.
@@ -24,17 +25,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include routes
+app.include_router(usr)
+
 @app.get("/")
 async def root():
     return {"Info": "Go to /docs URL for more info on the API"}
-
-@app.get("/get_user")
-async def test(username:str):
-    return dbConnector.get_user(username)
-
-@app.get("/get_all_users")
-async def get_all_users():
-    return dbConnector.get_all_users() 
 
 @app.get("/devices")
 async def devices():
@@ -56,10 +52,10 @@ async def genres():
 async def quality_in_device():
     return {'quality_in_device'}
 
-@app.get("country_in_device")
+@app.get("/country_in_device")
 async def country_in_device():
     return {'country_in_device'}
 
-@app.get("device_in_country")
+@app.get("/device_in_country")
 async def device_in_country():
     return {'device_in_country'}

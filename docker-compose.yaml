@@ -34,3 +34,5 @@ services:
       - MYSQL_ROOT_PASSWORD=${SQL_ROOT_PASSWORD}
     volumes:
       - ../.volumes/.mysql:/var/lib/mysql
+      - ../.volumes/.mysql_backup:/home/backup
+      - ../.volumes/test:/home/test

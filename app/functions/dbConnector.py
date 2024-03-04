@@ -30,28 +30,87 @@ def connect_to_db():
 
     return connector, cursor
 
+ ###################
+ ## USERS METHODS ##
+ ###################
+def create_user(user:dict):
+    [conn, db] = connect_to_db()
+    sql_query = f'''INSERT INTO MovieDB.Users (Name, Password, Email, 
+                    User_rank, Disabled, Deleted) VALUES 
+                    ("{user['username']}", "{user['password']}", 
+                    "{user['email']}", "{user['user_rank']}", 
+                    {user['disabled']}, {user['deleted']});'''
+
+    db.execute(sql_query)
+    conn.commit()
+
+    db.close()
+    conn.close()
+
+    return get_user(user['username'])
 
 def get_user(user:str):
     [conn, db] = connect_to_db()
-    sql_query = f'''SELECT Users.Name, Users.Password, Users.Email FROM MovieDB.Users
-                WHERE Users.Name="{user}";'''
+    sql_query = f'''SELECT Name, Email, User_rank, 
+                Disabled, Deleted FROM MovieDB.Users
+                WHERE Name="{user}";'''
 
     db.execute(sql_query)
     res = db.fetchone()
-    return {'Name': res[0], 'Password': res[1], 'e-mail':res[2]}
+
+    if res:
+        user = {'username': res[0],
+                'email': res[1],
+                'user_rank': res[2],
+                'disabled': res[3],
+                'deleted': res[4]}
+
+    db.close()
+    conn.close()
+
+    return user
 
 
 def get_all_users():
     [conn, db] = connect_to_db()
-    sql_query =f'''SELECT Users.Name, Users.Email FROM MovieDB.Users;'''
+    sql_query =f'''SELECT id, Name, Email, User_rank, 
+                Disabled, Deleted FROM MovieDB.Users;'''
 
     db.execute(sql_query)
     res = db.fetchall()
 
-    users_list = [list(res[i]) for i in range(len(res))]
+    users_list = []
+    for i in range(len(res)):
+        users_list.append(
+            {'id': res[i][0],
+             'username': res[i][1],
+             'email': res[i][2],
+             'user_rank': res[i][3],
+             'disabled': res[i][4],
+             'deleted': res[i][5]})
+
+    db.close()
+    conn.close()
 
     return users_list
 
+#####################
+## GENERAL METHODS ##
+#####################
+def delete_register(id:int, table:str):
+    [conn, db] = connect_to_db()
+
+    # Get info of the user to delete
+    db.execute(f'''SELECT Name FROM MovieDB.Users WHERE id="{id}";''')
+    deleted_user = get_user(db.fetchone()[0])
+
+    db.execute(f'''DELETE FROM {table} WHERE id={id};''')
+    conn.commit()
+
+    db.close()
+    conn.close()
+
+    return deleted_user
 
 def get_all(table:str):
     [conn, db] = connect_to_db()
@@ -62,6 +121,9 @@ def get_all(table:str):
     res = db.fetchall()
 
     obj_list = [res[i][1] for i in range(len(res))]
+
+    db.close()
+    conn.close()
 
     return obj_list
 
@@ -77,120 +139,7 @@ def get_all_genres():
     
     genres_list = [('[' + str(res[i][1]) + '] ' + str(res[i][0])) for i in range(len(res))]
 
+    db.close()
+    conn.close()
+
     return genres_list
-
-
-#    # General methods for objects
-#    def check_and_createObj(self, collection: str, param:str, value: str, obj:dict):
-#        '''
-#        This is a generic function to check whether a new object is already in the database or not, 
-#        before inserting it.
-#
-#        Currently it can only be used for cars and usages, since all other objects have more complex
-#        checking methods and need a specific connector class of their own. 
-#        
-#        If the check is OK, the create_obj function is called.
-#        '''
-#        if self.get_object(collection, param, value) != None:
-#            raise HTTPException(status_code=403, 
-#                  detail=f"There is already a '{collection}' entry with '{param}' = '{value}' in the database")
-#
-#        else:
-#            return self.create_obj(collection, param, obj)
-#
-#
-#    def check_and_updateObj(self, collection: str, param: str, original_value: str, new_data: dict):
-#        # First of all, check if the 'original_value' introduced by the user for the param 'param'
-#        # is actually an object within 'collection' collection in the database
-#        if self.get_object(collection, param, original_value) == None:
-#            raise HTTPException(status_code=404,
-#            detail=f"There is no object in '{collection}' collection with '{param}'='{original_value}'")
-#
-#        # Create a 'new_values' dict to filter those optional values left blank by the user.
-#        # Otherwise, they would overwrite the real values in those fields, leaving them empty. 
-#        new_values = {k:new_data[k] for k in new_data.keys() if new_data[k] != None}
-#
-#        # Check the 'param' is unique and if so, insert it into the database:
-#        condition1 = param in new_values.keys()
-#        condition2 = self.get_object(collection, param, new_data[param]) != None
-#
-#        if condition1 and condition2:
-#            raise HTTPException(status_code=403,
-#            detail=f"There is already a '{collection}' entry with '{param}'='{new_data[param]}' in the database")
-#
-#        return self.update_object(collection, param, original_value, new_values)
-#
-#    def create_obj(self, collection: str, param:str, obj:dict):
-#        obj['date_created'] = datetime.now(timezone('Europe/Madrid'))
-#        res = self.dbName[collection].insert_one(obj)
-#
-#        return f"""A new entry with '{param}' = '{obj[param]}' inserted in '{collection}' collection with _id '{res.inserted_id}'"""
-#
-#
-#    # Instead of deleting an object, its field "deleted" is set to True.
-#    def delete_object(self, obj: str, collection: str):
-#        if collection == 'users':
-#            new_values = {"$set": {"deleted": True, "disabled": True}}
-#        else:
-#            new_values = {"$set": {"deleted": True}}
-#
-#        query = {"_id": ObjectId(obj)}
-#        if self.dbName[collection].find_one(query) == None:
-#            raise HTTPException(status_code=404,
-#            detail=f"There is no entry in '{collection}' collection with '_id' = '{obj}' in the database")
-#
-#        res = self.dbName[collection].update_one(query, new_values)
-#        if res.modified_count != 0:
-#            msg = f"Object {obj} has been deleted from '{collection}' collection."
-#
-#        else:
-#            msg = f"Object {obj} could not be deleted from '{collection}' collection."
-#
-#        return {"result": msg}
-#
-#
-#    def get_all_objects(self, collection: str, user_rank: str):
-#        if user_rank != 'admin':
-#            query = {'deleted': False}
-#        else:
-#            query = {}
-#
-#        all_objects = [i for i in self.dbName[collection].find(query)]
-#        for obj in all_objects:
-#            obj['id'] = str(obj['_id'])   # Converts ObjectId to str and changes name of key for model usage
-#            del obj['_id']    
-#
-#        return all_objects
-#
-#
-#    def get_object(self, collection: str, param: str, value: str):
-#        if param == "_id":
-#            value = ObjectId(value)
-#
-#        result = self.dbName[collection].find_one({param: value})
-#        if result != None:
-#            result['id'] = str(result['_id'])   # Converts ObjectId to str and changes name of key for model usage
-#            del result['_id']
-#
-#            return result
-#        else:
-#            return None
-#
-#
-#    def update_object(self, collection: str, param: str, original_value: str, new_data: dict):
-#        res = self.dbName[collection].update_one({param: original_value}, {"$set": new_data})
-#
-#        if len(new_data.keys()) == 1:
-#            aux1 = "Value"
-#            aux2 = "has been"
-#        else:
-#            aux1 = "Values"
-#            aux2 = "have been"
-#
-#        if res.modified_count != 0:
-#            msg = f"{aux1} {new_data} {aux2} updated for entry '{original_value}' in collection '{collection}'."
-#
-#        else:
-#            msg = f"{aux1} {new_data} could not be updated for entry '{original_value}' in collection '{collection}'."
-#
-#        return {'result': msg}
