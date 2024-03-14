@@ -4,25 +4,9 @@ from pydantic import BaseModel
 #    Token, 
 #    TokenData)
 #
-#from .cars import (
-#    Car,
-#    CarInDB,
-#    UpdatedCar) 
-#
-#from .configs import(
-#    Config,
-#    ConfigInDB,
-#    UpdatedConfig)
-#
-#from .projects import(
-#    Project,
-#    ProjectInDB,
-#    UpdatedProject)
-#
-#from .usages import(
-#    Usage,
-#    UsageInDB,
-#    UpdatedUsage)
+from .movies import (
+    Movie,
+    MovieInDB) 
 
 from .users import(
 #    AdminUpdatedUser,

@@ -49,6 +49,7 @@ def create_user(user:dict):
 
     return get_user(user['username'])
 
+
 def get_user(user:str):
     [conn, db] = connect_to_db()
     sql_query = f'''SELECT Name, Email, User_rank, 
@@ -112,20 +113,24 @@ def delete_register(id:int, table:str):
 
     return deleted_user
 
+
 def get_all(table:str):
     [conn, db] = connect_to_db()
     sql_query =f'''SELECT * FROM MovieDB.{table};'''
-    print(sql_query)
 
     db.execute(sql_query)
     res = db.fetchall()
 
-    obj_list = [res[i][1] for i in range(len(res))]
+    if table != 'Languages':
+        obj_list = [res[i][1] for i in range(len(res))]
+    elif table == 'Languages':
+        obj_list = {res[i][2]:res[i][1] for i in range(len(res))}
 
     db.close()
     conn.close()
 
     return obj_list
+
 
 def get_all_genres():
     [conn, db] = connect_to_db()
@@ -143,3 +148,102 @@ def get_all_genres():
     conn.close()
 
     return genres_list
+
+
+def get_all_movies(order_by:str):
+    [conn, db] = connect_to_db()
+    if order_by == 'Title':
+        sql_query = f'''SELECT Main.id, Main.Title, Main.OriginalTitle, Storage.Device, Qualities.Quality, 
+                        Main.Year, Countries.Country, Main.Length, Main.Screenplay, Main.Score, Main.Image
+                        FROM MovieDB.Main
+                        INNER JOIN MovieDB.Storage ON Main.DeviceID = Storage.id
+                        INNER JOIN MovieDB.Qualities ON Main.QualityID = Qualities.id
+                        INNER JOIN MovieDB.Countries ON Main.CountryID = Countries.id
+                        ORDER BY Main.Title;'''
+    elif order_by == 'Year':
+        sql_query = f'''SELECT Main.id, Main.Title, Main.OriginalTitle, Storage.Device, Qualities.Quality, 
+                        Main.Year, Countries.Country, Main.Length, Main.Screenplay, Main.Score, Main.Image
+                        FROM MovieDB.Main
+                        INNER JOIN MovieDB.Storage ON Main.DeviceID = Storage.id
+                        INNER JOIN MovieDB.Qualities ON Main.QualityID = Qualities.id
+                        INNER JOIN MovieDB.Countries ON Main.CountryID = Countries.id
+                        ORDER BY Main.Year DESC;'''
+    elif order_by == 'Score':
+        sql_query = f'''SELECT Main.id, Main.Title, Main.OriginalTitle, Storage.Device, Qualities.Quality, 
+                        Main.Year, Countries.Country, Main.Length, Main.Screenplay, Main.Score, Main.Image
+                        FROM MovieDB.Main
+                        INNER JOIN MovieDB.Storage ON Main.DeviceID = Storage.id
+                        INNER JOIN MovieDB.Qualities ON Main.QualityID = Qualities.id
+                        INNER JOIN MovieDB.Countries ON Main.CountryID = Countries.id
+                        ORDER BY Main.Score DESC;'''
+
+    db.execute(sql_query)
+    res = db.fetchall()
+
+    movies = []
+    for i in range(len(res)):
+        new_movie = {'id': res[i][0],
+                     'title': res[i][1],
+                     'origTitle': res[i][2],
+                     'storage_device': res[i][3],
+                     'quality': res[i][4],
+                     'year': res[i][5],
+                     'country': res[i][6],
+                     'length': res[i][7],
+                     'screenplay': res[i][8],
+                     'score': res[i][9],
+                     'img': res[i][10]}
+
+        movies.append(new_movie)
+
+    db.close()
+    conn.close()
+
+    return movies
+
+
+def get_combined(table, col, filter_col, value):
+    '''get_combined will filter the Main table by a defined column and value, and from those filtered rows
+    will return the distinct entries find in another desired column. It will return the names and not just IDs.
+    For example, will get all different qualities found for a given Storage device, 
+    or all countries found for a given quality. 
+
+    - table: The table that contains the information to be retrieved
+    - col: The name of the column to retrieved its distinct values
+    - filter_col: The field to filter the Main table by
+    - value: The value to filter by.'''
+
+    [conn, db] = connect_to_db()
+    sql_query = f'''SELECT DISTINCT {table}.{col}
+                    FROM MovieDB.Main
+                    INNER JOIN MovieDB.{table} ON Main.{col}ID={table}.id
+                    WHERE Main.{filter_col} = {value}
+                    ORDER BY {table}.{col};'''
+    print(sql_query)
+
+    db.execute(sql_query)
+    res = db.fetchall()
+
+    if res:
+        obj_list = [res[i][0] for i in range(len(res))]
+
+    db.close()
+    conn.close()
+
+    return obj_list
+
+
+def get_object(table, field, value):
+    [conn, db] = connect_to_db()
+    sql_query = f'''SELECT {table}.id FROM MovieDB.{table} WHERE {table}.{field} = "{value}";'''
+    
+    db.execute(sql_query)
+    res = db.fetchone()
+
+    if res: data = res[0]
+    else: data = ''
+
+    db.close()
+    conn.close()
+
+    return data
