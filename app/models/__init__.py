@@ -4,10 +4,6 @@ from pydantic import BaseModel
 #    Token, 
 #    TokenData)
 
-from .movies import (
-    Movie,
-    MovieInDB) 
-
 from .users import(
 #    AdminUpdatedUser,
     NewUser,

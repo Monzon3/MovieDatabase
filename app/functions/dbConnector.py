@@ -288,7 +288,7 @@ def get_all_genres():
     return genres_list
 
 
-def get_all_movies(order_by:str):
+def get_all_films(order_by:str):
     [conn, db] = connect_to_db()
     if order_by == 'Title':
         sql_query = f'''SELECT Main.id, Main.Title, Main.OriginalTitle, Storage.Device, Qualities.Quality, 
@@ -318,26 +318,26 @@ def get_all_movies(order_by:str):
     db.execute(sql_query)
     res = db.fetchall()
 
-    movies = []
+    films = []
     for i in range(len(res)):
-        new_movie = {'id': res[i][0],
-                     'title': res[i][1],
-                     'origTitle': res[i][2],
-                     'storage_device': res[i][3],
-                     'quality': res[i][4],
-                     'year': res[i][5],
-                     'country': res[i][6],
-                     'length': res[i][7],
-                     'screenplay': res[i][8],
-                     'score': res[i][9],
-                     'img': res[i][10]}
+        new_film = {'id': res[i][0],
+                    'title': res[i][1],
+                    'origTitle': res[i][2],
+                    'storage_device': res[i][3],
+                    'quality': res[i][4],
+                    'year': res[i][5],
+                    'country': res[i][6],
+                    'length': res[i][7],
+                    'screenplay': res[i][8],
+                    'score': res[i][9],
+                    'img': res[i][10]}
 
-        movies.append(new_movie)
+        films.append(new_film)
 
     db.close()
     conn.close()
 
-    return movies
+    return films
 
 
 def get_combined(table, col, filter_col, value):

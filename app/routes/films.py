@@ -1,12 +1,12 @@
 from fastapi import APIRouter
 import functions.dbConnector as dbConnector
-from models.movies import Movie
+from models.films import Film
 
-mov = APIRouter(prefix="/movies",
-                tags=["Route for movie entries management."],
+flm = APIRouter(prefix="/films",
+                tags=["Route for film entries management."],
                 responses={404: {"description": "Not found"}})
 
-# Get all movies
-@mov.get("/get_all_by_title", response_model=list[Movie])
+# Get all films
+@flm.get("/get_all_by_title", response_model=list[Film])
 async def get_full_list():
-    return dbConnector.get_all_movies('Title')
+    return dbConnector.get_all_films('Title')
