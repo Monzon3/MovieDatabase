@@ -4,10 +4,10 @@ connect to different databases.'''
 
 #from bson.objectid import ObjectId
 #from datetime import datetime
-#from fastapi import HTTPException
+from fastapi import HTTPException
 from dotenv import load_dotenv
 import os
-import pymysql
+import pymysql as sql
 #from pytz import timezone
 
 load_dotenv()
@@ -19,7 +19,7 @@ def connect_to_db():
     sql_database = os.getenv("MYSQL_DATABASE")
 
     # Connect with the database
-    connector = pymysql.connect(host=MySQL_hostname,
+    connector = sql.connect(host=MySQL_hostname,
                         port=3306, 
                         user=sql_username,
                         passwd=sql_password, 
@@ -98,6 +98,144 @@ def get_all_users():
 #####################
 ## GENERAL METHODS ##
 #####################
+def add_director(director:dict):
+    [conn, db] = connect_to_db()
+
+    sql_query = f'''INSERT INTO MovieDB.Directors (Name, CountryID) 
+                    VALUES ('{director['name']}', 
+                           (SELECT Countries.id FROM Countries 
+                           WHERE Countries.Country = '{director['country']}'));'''
+    try:
+        db.execute(sql_query)
+    
+    except sql.Error as error:
+        raise HTTPException (status_code = 403, detail=f'{error.args[0]}: {error.args[1]}')
+
+    sql_query = f"""SELECT Directors.id, Directors.Name, Countries.Country FROM MovieDB.Directors
+                    INNER JOIN MovieDB.Countries ON Directors.CountryID = Countries.id 
+                    WHERE Directors.Name = '{director['name']}';"""
+    db.execute(sql_query)
+    res = db.fetchone()
+    directorInDBFull = {}
+    directorInDBFull['id'] = res[0]
+    directorInDBFull['name'] = res[1]
+    directorInDBFull['country'] = res[2]
+
+    conn.commit()
+
+    db.close()
+    conn.close()
+
+    return directorInDBFull
+
+def add_genre(genre:dict):
+    [conn, db] = connect_to_db()
+
+    sql_query = f"""INSERT INTO MovieDB.Genres (Name, CategoryID) 
+                    VALUES ('{genre['name']}', 
+                    (SELECT Genre_Categories.id FROM MovieDB.Genre_Categories 
+                    WHERE Genre_Categories.Category = '{genre['category']}'));"""
+    print(sql_query)
+    try:
+        db.execute(sql_query)
+    
+    except sql.Error as error:
+        raise HTTPException (status_code = 403, detail=f'{error.args[0]}: {error.args[1]}')
+
+    sql_query = f"""SELECT Genres.id, Genres.Name, Genre_Categories.Category 
+                    FROM MovieDB.Genres 
+                    INNER JOIN Genre_Categories ON Genres.CategoryID = Genre_Categories.id
+                    WHERE Genres.Name = '{genre['name']}';"""
+    print(sql_query)
+    db.execute(sql_query)
+    res = db.fetchone()
+    genreInDBFull = {}
+    genreInDBFull['id'] = res[0]
+    genreInDBFull['name'] = res[1]
+    genreInDBFull['category'] = res[2]
+
+    conn.commit()
+
+    db.close()
+    conn.close()
+
+    return genreInDBFull
+
+def add_genre_category(category:dict):
+    [conn, db] = connect_to_db()
+
+    sql_query = f"""INSERT INTO MovieDB.Genre_Categories (Category) 
+                    VALUES ('{category['name']}');"""
+    try:
+        db.execute(sql_query)
+    
+    except sql.Error as error:
+        raise HTTPException (status_code = 403, detail=f'{error.args[0]}: {error.args[1]}')
+
+    sql_query = f"""SELECT * FROM MovieDB.Genre_Categories 
+                  WHERE Genre_Categories.Category = '{category['name']}';"""
+    db.execute(sql_query)
+    res = db.fetchone()
+    categoryInDB = {}
+    categoryInDB['id'] = res[0]
+    categoryInDB['name'] = res[1]
+
+    conn.commit()
+
+    db.close()
+    conn.close()
+
+    return categoryInDB
+
+def add_language(language:dict):
+    [conn, db] = connect_to_db()
+
+    sql_query = f"""INSERT INTO MovieDB.Languages (LangShort, LangComplete) 
+                    VALUES ('{language['short']}', '{language['complete']}');"""
+    try:
+        db.execute(sql_query)
+    
+    except sql.Error as error:
+        raise HTTPException (status_code = 403, detail=f'{error.args[0]}: {error.args[1]}')
+
+    sql_query = f"""SELECT * FROM MovieDB.Languages 
+                  WHERE Languages.LangShort = '{language['short']}';"""
+    db.execute(sql_query)
+    res = db.fetchone()
+    languageInDB = {}
+    languageInDB['id'] = res[0]
+    languageInDB['short'] = res[1]
+    languageInDB['complete'] = res[2]
+
+    conn.commit()
+
+    db.close()
+    conn.close()
+
+    return languageInDB
+
+def add_register(table, field, value):
+    [conn, db] = connect_to_db()
+
+    sql_query = f'''INSERT INTO MovieDB.{table} ({field}) VALUES ('{value}');'''
+    try:
+        db.execute(sql_query)
+    
+    except sql.Error as error:
+        raise HTTPException (status_code = 403, detail=f'{error.args[0]}: {error.args[1]}')
+
+    sql_query = f"SELECT {table}.id, {table}.{field} FROM MovieDB.{table} WHERE {field} = '{value}';"
+    db.execute(sql_query)
+    res = db.fetchone()
+
+    conn.commit()
+
+    db.close()
+    conn.close()
+
+    return f"{field} '{res[1]}' inserted into '{table}' table with id = {res[0]}"
+
+
 def delete_register(id:int, table:str):
     [conn, db] = connect_to_db()
 
