@@ -2,8 +2,8 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 import functions.dbConnector as dbConnector
 import os
-from routes.info import info
 from routes.movies import mov
+from routes.other import oth
 from routes.users import usr
 
 description = """
@@ -29,7 +29,7 @@ app.add_middleware(
 
 # Include routes
 app.include_router(usr)
-app.include_router(info)
+app.include_router(oth)
 app.include_router(mov)
 
 @app.get("/")
