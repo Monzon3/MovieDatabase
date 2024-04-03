@@ -20,6 +20,6 @@ async def get_full_list():
 async def get_full_list():
     return dbConnector.get_all_films('Score')
 
-@flm.post("/")
+@flm.post("/", response_model=list[FilmFull])
 async def get_film(film: Film):
     return dbConnector.get_film(json(film))

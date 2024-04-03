@@ -344,7 +344,11 @@ def get_film(film:dict):
     flag = 0
     titleAux = ""
     origTitleAux = ""
+    storageAux = ""
+    qualityAux = ""
     yearAux = ""
+    countryAux = ""
+    lengthAux = ""
     screenplayAux = ""
     scoreAux = ""
 
@@ -358,6 +362,20 @@ def get_film(film:dict):
         origTitleAux = f"OriginalTitle LIKE '%{film['origTitle']}%'"
         flag = 1
 
+    if film['storageDevice'] != "" and flag == 1:
+        storageAux = f" AND Storage.Device = '{film['storageDevice']}'"
+        
+    elif film['storageDevice'] != "" and flag == 0:
+        storageAux = f"Storage.Device = '{film['storageDevice']}'"
+        flag = 1
+
+    if film['quality'] != "" and flag == 1:
+        qualityAux = f" AND Qualities.Quality = '{film['quality']}'"
+        
+    elif film['quality'] != "" and flag == 0:
+        qualityAux = f"Qualities.Quality = '{film['quality']}'"
+        flag = 1
+
     if film['year1'] != None and film['year2'] == None and flag == 1:
         yearAux = f" AND Year = {film['year1']}"
     elif  film['year1'] != None and film['year2'] == None and flag == 0:
@@ -368,6 +386,32 @@ def get_film(film:dict):
     elif film['year1'] != None and film['year2'] != None and flag == 0:
         yearAux = f"Year BETWEEN {film['year1']} AND {film['year2']}"
         flag = 1
+
+    if film['country'] != "" and flag == 1:
+        countryAux = f" AND Countries.Country = '{film['country']}'"
+        
+    elif film['country'] != "" and flag == 0:
+        countryAux = f"Countries.Country = '{film['country']}'"
+        flag = 1
+
+    if film['length'] != "":
+        if film['length'] == "Cortos":
+            lengthAux = f"Main.Length BETWEEN 0 AND 30"
+        elif film['length'] == "Menos de 80 minutos":
+            lengthAux = f"Main.Length BETWEEN 31 AND 80"
+        elif film['length'] == "90 minutos":
+            lengthAux = f"Main.Length BETWEEN 81 AND 105"
+        elif film['length'] == "120 minutos":
+            lengthAux = f"Main.Length BETWEEN 106 AND 135"
+        elif film['length'] == "Entre 120 y 180 minutos":
+            lengthAux = f"Main.Length BETWEEN 121 AND 180"
+        elif film['length'] == "Más de 180 minutos":
+            lengthAux = f"Main.Length > 181" 
+
+        if flag == 1:
+            lengthAux = " AND " + lengthAux 
+        else:
+            flag = 0
 
     if film['screenplay'] != "" and flag == 1:
         screenplayAux = f" AND Screenplay LIKE '%{film['screenplay']}%'"
@@ -386,12 +430,21 @@ def get_film(film:dict):
     elif film['score1'] != None and film['score2'] != None and flag == 0:
         scoreAux = f"Score BETWEEN {film['score1']} AND {film['score2']}"
 
-    if titleAux == "" and origTitleAux == "" and yearAux == "" and scoreAux == "" \
+    if titleAux == "" and origTitleAux == "" and storageAux == "" and qualityAux == "" and \
+       yearAux == "" and countryAux == "" and lengthAux == "" and scoreAux == "" \
        and screenplayAux == "": 
         raise HTTPException (status_code = 403, detail="You have not filled anything to look for.")
 
-    sql_query = f"SELECT * FROM MovieDB.Main WHERE " + titleAux + origTitleAux + yearAux + \
-                screenplayAux + scoreAux + (";")
+    fields = """Main.id, Main.Title, Main.OriginalTitle, Storage.Device, Qualities.Quality, 
+                Main.Year, Countries.Country, Main.Length, Main.Screenplay, Main.Score, Main.Image """
+
+    join_str = """INNER JOIN MovieDB.Storage ON Main.DeviceID = Storage.id
+                  INNER JOIN MovieDB.Qualities ON Main.QualityID = Qualities.id
+                  INNER JOIN MovieDB.Countries ON Main.CountryID = Countries.id"""
+
+    sql_query = f"SELECT {fields} FROM MovieDB.Main {join_str} WHERE " + titleAux + origTitleAux + \
+                storageAux + qualityAux + yearAux + countryAux + lengthAux + screenplayAux + \
+                scoreAux + (";")
     print(sql_query)
     [conn, db] = connect_to_db()
     db.execute(sql_query)

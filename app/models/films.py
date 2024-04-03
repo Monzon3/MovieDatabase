@@ -4,6 +4,7 @@ from typing import Optional
 
 class FilmFull(BaseModel):
     # Min and max values should match those in the definition of the database
+    id: int
     title: str = Field(min_length=1, max_length = 100)
     origTitle: str = Field(min_length=1, max_lenth=100)
     storageDevice: str = Field(min_length=1, max_length=20)
@@ -22,14 +23,14 @@ class FilmFull(BaseModel):
 class Film(BaseModel):
     title: str = Field(max_length = 100, default="")
     origTitle: Optional[str] = Field(max_lenth=100, default="")
-    #storageDevice: Optional[str] = Field(max_length=20, default="")
-    #quality: Optional[str] = Field(min_length=1, max_length=10, default="")
+    storageDevice: Optional[str] = Field(max_length=20, default="")
+    quality: Optional[str] = Field(max_length=10, default="")
     #audio: Optional[str] = Field(min_length=0, max_length=6, default="")
     #subs: Optional[str] = Field(min_length=0, max_length=6, default="")
     year1: Optional[int] = Field(ge=1880, le=2100, default = None)
     year2: Optional[int] = Field(ge=1880, le=2100, default = None)
-    #country: Optional[str] = Field(min_length=1, max_length=25, default="")
-    #length: Optional[int] = Field(ge=0, default="")
+    country: Optional[str] = Field(max_length=25, default="")
+    length: Optional[str] = Field(default="")
     #director: Optional[str] = Field(min_length=1, max_lenght=200, default="")
     screenplay: Optional[str] = Field(max_length=300, default="")
     score1: Optional[int] = Field(ge=0, le=10, default=None)
