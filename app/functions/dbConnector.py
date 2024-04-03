@@ -291,29 +291,29 @@ def get_all_genres():
 def get_all_films(order_by:str):
     [conn, db] = connect_to_db()
     if order_by == 'Title':
-        sql_query = f'''SELECT Main.id, Main.Title, Main.OriginalTitle, Storage.Device, Qualities.Quality, 
+        sql_query = f"""SELECT Main.id, Main.Title, Main.OriginalTitle, Storage.Device, Qualities.Quality, 
                         Main.Year, Countries.Country, Main.Length, Main.Screenplay, Main.Score, Main.Image
                         FROM MovieDB.Main
                         INNER JOIN MovieDB.Storage ON Main.DeviceID = Storage.id
                         INNER JOIN MovieDB.Qualities ON Main.QualityID = Qualities.id
                         INNER JOIN MovieDB.Countries ON Main.CountryID = Countries.id
-                        ORDER BY Main.Title;'''
+                        ORDER BY Main.Title;"""
     elif order_by == 'Year':
-        sql_query = f'''SELECT Main.id, Main.Title, Main.OriginalTitle, Storage.Device, Qualities.Quality, 
+        sql_query = f"""SELECT Main.id, Main.Title, Main.OriginalTitle, Storage.Device, Qualities.Quality, 
                         Main.Year, Countries.Country, Main.Length, Main.Screenplay, Main.Score, Main.Image
                         FROM MovieDB.Main
                         INNER JOIN MovieDB.Storage ON Main.DeviceID = Storage.id
                         INNER JOIN MovieDB.Qualities ON Main.QualityID = Qualities.id
                         INNER JOIN MovieDB.Countries ON Main.CountryID = Countries.id
-                        ORDER BY Main.Year DESC;'''
+                        ORDER BY Main.Year DESC;"""
     elif order_by == 'Score':
-        sql_query = f'''SELECT Main.id, Main.Title, Main.OriginalTitle, Storage.Device, Qualities.Quality, 
+        sql_query = f"""SELECT Main.id, Main.Title, Main.OriginalTitle, Storage.Device, Qualities.Quality, 
                         Main.Year, Countries.Country, Main.Length, Main.Screenplay, Main.Score, Main.Image
                         FROM MovieDB.Main
                         INNER JOIN MovieDB.Storage ON Main.DeviceID = Storage.id
                         INNER JOIN MovieDB.Qualities ON Main.QualityID = Qualities.id
                         INNER JOIN MovieDB.Countries ON Main.CountryID = Countries.id
-                        ORDER BY Main.Score DESC;'''
+                        ORDER BY Main.Score DESC;"""
 
     db.execute(sql_query)
     res = db.fetchall()
@@ -323,7 +323,7 @@ def get_all_films(order_by:str):
         new_film = {'id': res[i][0],
                     'title': res[i][1],
                     'origTitle': res[i][2],
-                    'storage_device': res[i][3],
+                    'storageDevice': res[i][3],
                     'quality': res[i][4],
                     'year': res[i][5],
                     'country': res[i][6],
@@ -339,6 +339,83 @@ def get_all_films(order_by:str):
 
     return films
 
+def get_film(film:dict):
+    # First of all, define SQL query depending on filled fields
+    flag = 0
+    titleAux = ""
+    origTitleAux = ""
+    yearAux = ""
+    screenplayAux = ""
+    scoreAux = ""
+
+    if film['title'] != "":
+        titleAux = f"Title LIKE '%{film['title']}%'"
+        flag = 1
+    
+    if film['origTitle'] != "" and flag == 1:
+        origTitleAux = f" AND OriginalTitle LIKE '%{film['origTitle']}%'"
+    elif  film['origTitle'] != "" and flag == 0:
+        origTitleAux = f"OriginalTitle LIKE '%{film['origTitle']}%'"
+        flag = 1
+
+    if film['year1'] != None and film['year2'] == None and flag == 1:
+        yearAux = f" AND Year = {film['year1']}"
+    elif  film['year1'] != None and film['year2'] == None and flag == 0:
+        yearAux = f"Year = {film['year1']}"
+        flag = 1
+    elif film['year1'] != None and film['year2'] != None and flag == 1:
+        yearAux = f" AND Year BETWEEN {film['year1']} AND {film['year2']}"
+    elif film['year1'] != None and film['year2'] != None and flag == 0:
+        yearAux = f"Year BETWEEN {film['year1']} AND {film['year2']}"
+        flag = 1
+
+    if film['screenplay'] != "" and flag == 1:
+        screenplayAux = f" AND Screenplay LIKE '%{film['screenplay']}%'"
+    elif  film['screenplay'] != "" and flag == 0:
+        screenplayAux = f"screenplay LIKE '%{film['screenplay']}%'"
+        flag = 1
+
+    if film['score1'] != None and film['score2'] == None and flag == 1:
+        scoreAux = f" AND Score = {film['score1']}"
+    elif  film['score1'] != None and film['score2'] == None and flag == 0:
+        scoreAux = f"Score = {film['score1']}"
+        flag = 1
+    elif film['score1'] != None and film['score2'] != None and flag == 1:
+        scoreAux = f" AND Score BETWEEN {film['score1']} AND {film['score2']}"
+        flag = 1
+    elif film['score1'] != None and film['score2'] != None and flag == 0:
+        scoreAux = f"Score BETWEEN {film['score1']} AND {film['score2']}"
+
+    if titleAux == "" and origTitleAux == "" and yearAux == "" and scoreAux == "" \
+       and screenplayAux == "": 
+        raise HTTPException (status_code = 403, detail="You have not filled anything to look for.")
+
+    sql_query = f"SELECT * FROM MovieDB.Main WHERE " + titleAux + origTitleAux + yearAux + \
+                screenplayAux + scoreAux + (";")
+    print(sql_query)
+    [conn, db] = connect_to_db()
+    db.execute(sql_query)
+    res = db.fetchall()
+
+    films = []
+    for i in range(len(res)):
+        new_film = {'id': res[i][0],
+                    'title': res[i][1],
+                    'origTitle': res[i][2],
+                    'storageDevice': res[i][3],
+                    'quality': res[i][4],
+                    'year': res[i][5],
+                    'country': res[i][6],
+                    'length': res[i][7],
+                    'screenplay': res[i][8],
+                    'score': res[i][9],
+                    'img': res[i][10]}
+        films.append(new_film)
+    
+    db.close()
+    conn.close()
+
+    return films
 
 def get_combined(table, col, filter_col, value):
     '''get_combined will filter the Main table by a defined column and value, and from those filtered rows
@@ -357,7 +434,6 @@ def get_combined(table, col, filter_col, value):
                     INNER JOIN MovieDB.{table} ON Main.{col}ID={table}.id
                     WHERE Main.{filter_col} = {value}
                     ORDER BY {table}.{col};'''
-    print(sql_query)
 
     db.execute(sql_query)
     res = db.fetchall()

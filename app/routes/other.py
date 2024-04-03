@@ -1,11 +1,11 @@
+from fastapi import APIRouter
 from fastapi.encoders import jsonable_encoder as json
+import functions.dbConnector as dbConnector
 from models.other import (
     Director, DirectorInDBFull, 
     Genre, GenreInDBFull,
     GenreCategory, GenreCategoryInDB, 
     Language, LanguageInDB)
-from fastapi import APIRouter
-import functions.dbConnector as dbConnector
 
 oth = APIRouter(prefix="/other",
                 tags=["Route for secondary tables management"],
