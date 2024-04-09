@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 from fastapi.encoders import jsonable_encoder as json
 import functions.dbConnector as dbConnector
 from models.films import Film, FilmFull
@@ -8,18 +8,18 @@ flm = APIRouter(prefix="/films",
                 responses={404: {"description": "Not found"}})
 
 # Get all films
-@flm.get("/get_all_by_title", response_model=list[FilmFull])
+@flm.get("/get_all_by_title", response_model=list[FilmFull], status_code = status.HTTP_200_OK)
 async def get_full_list():
-    return dbConnector.get_all_films('Title')
+    return dbConnector.get_all_films("Title", "ASC")
 
-@flm.get("/get_all_by_year", response_model=list[FilmFull])
+@flm.get("/get_all_by_year", response_model=list[FilmFull], status_code = status.HTTP_200_OK)
 async def get_full_list():
-    return dbConnector.get_all_films('Year')
+    return dbConnector.get_all_films("Year", "DESC")
 
-@flm.get("/get_all_by_score", response_model=list[FilmFull])
+@flm.get("/get_all_by_score", response_model=list[FilmFull], status_code = status.HTTP_200_OK)
 async def get_full_list():
-    return dbConnector.get_all_films('Score')
+    return dbConnector.get_all_films("Score", "DESC")
 
-@flm.post("/", response_model=list[FilmFull])
+@flm.post("/", response_model=list[FilmFull], status_code = status.HTTP_200_OK)
 async def get_film(film: Film):
     return dbConnector.get_film(json(film))

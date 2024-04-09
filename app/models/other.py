@@ -1,12 +1,24 @@
 from pydantic import BaseModel, Field
+from typing import Optional
 
+class Country(BaseModel):
+    country: str = Field(max_length=25, description="Name of the country")
+
+class CountryInDB(Country):
+    id: int
+
+class Device(BaseModel):
+    device: str = Field(max_length=20, description="Name of the storage device")
+
+class DeviceInDB(Device):
+    id: int
 
 class Director(BaseModel):
-    # Min and max values should match those in the definition of the database
-    name: str = Field(min_length=1, max_length=200)
-    country: str = Field(min_length=1, max_length=25)
+    # Max values should match those in the definition of the database
+    name: str = Field(max_length=200)
+    country: Optional[str] = Field(max_length=25, default=None)
 
-class DirectorInDBFull(Director):
+class DirectorInDB(Director):
     id: int
 
 class Genre(BaseModel):
@@ -25,7 +37,7 @@ class GenreCategoryInDB(GenreCategory):
 class Language(BaseModel):
     # Min and max values should match those in the definition of the database
     short: str = Field(min_length=3, max_length=6)
-    complete: str = Field(min_length=1, max_length=15)
+    complete: str = Field(max_length=15)
 
 class LanguageInDB(Language):
     id: int
