@@ -236,6 +236,8 @@ def add_register(table, field, value):
         new_obj = {"id": res[0], "country": res[1]}
     elif table == "Storage":
         new_obj = {"id": res[0], "device": res[1]}
+    elif table == "Qualities":
+        new_obj = {"id": res[0], "quality": res[1]}
 
     return new_obj
 
@@ -282,8 +284,10 @@ def get_all(table:str):
         obj_list = [{"id":res[i][0], "name":res[i][1], "country":res[i][2]} for i in range(len(res))]
     elif table == "Genres":
         obj_list = [{"id": res[i][0], "name":res[i][1], "category":res[i][2]} for i in range(len(res))]
-    elif table == 'Languages':
-        obj_list = {res[i][2]:res[i][1] for i in range(len(res))}
+    elif table == "Languages":
+        obj_list = [{"id": res[i][0], "short": res[i][1], "complete": res[i][2]} for i in range(len(res))]
+    elif table == "Qualities":
+        obj_list = [{"id":res[i][0], "quality":res[i][1]} for i in range(len(res))]
 
     db.close()
     conn.close()
@@ -325,6 +329,41 @@ def get_all_films(field: str, order_by:str):
     conn.close()
 
     return films
+
+
+def get_combined(table, col, filter_col, value):
+    '''get_combined will filter the Main table by a defined column and value, and from those filtered rows
+    will return the distinct entries find in another desired column. It will return the names and not just IDs.
+    For example, will get all different qualities found for a given Storage device, 
+    or all countries found for a given quality. 
+
+    - table: The table that contains the information to be retrieved
+    - col: The name of the column to retrieve its distinct values
+    - filter_col: The field to filter the Main table by
+    - value: The value to filter by.'''
+
+    [conn, db] = connect_to_db()
+    sql_query = f'''SELECT DISTINCT {table}.id, {table}.{col}
+                    FROM MovieDB.Main
+                    INNER JOIN MovieDB.{table} ON Main.{col}ID={table}.id
+                    WHERE Main.{filter_col} = {value}
+                    ORDER BY {table}.{col};'''
+
+    db.execute(sql_query)
+    res = db.fetchall()
+
+    if table == "Countries":
+        obj_list = [{"id": res[i][0], "country": res[i][1]} for i in range(len(res))]
+    elif table == "Qualities":
+        obj_list = [{"id": res[i][0], "quality": res[i][1]} for i in range(len(res))]
+    elif table == "Storage":
+        obj_list = [{"id": res[i][0], "device": res[i][1]} for i in range(len(res))]
+
+    db.close()
+    conn.close()
+
+    return obj_list
+
 
 def get_film(film:dict):
     # First of all, define SQL query depending on filled fields
@@ -457,35 +496,6 @@ def get_film(film:dict):
     conn.close()
 
     return films
-
-def get_combined(table, col, filter_col, value):
-    '''get_combined will filter the Main table by a defined column and value, and from those filtered rows
-    will return the distinct entries find in another desired column. It will return the names and not just IDs.
-    For example, will get all different qualities found for a given Storage device, 
-    or all countries found for a given quality. 
-
-    - table: The table that contains the information to be retrieved
-    - col: The name of the column to retrieved its distinct values
-    - filter_col: The field to filter the Main table by
-    - value: The value to filter by.'''
-
-    [conn, db] = connect_to_db()
-    sql_query = f'''SELECT DISTINCT {table}.{col}
-                    FROM MovieDB.Main
-                    INNER JOIN MovieDB.{table} ON Main.{col}ID={table}.id
-                    WHERE Main.{filter_col} = {value}
-                    ORDER BY {table}.{col};'''
-
-    db.execute(sql_query)
-    res = db.fetchall()
-
-    if res:
-        obj_list = [res[i][0] for i in range(len(res))]
-
-    db.close()
-    conn.close()
-
-    return obj_list
 
 
 def get_object(table, field, value):

@@ -41,3 +41,9 @@ class Language(BaseModel):
 
 class LanguageInDB(Language):
     id: int
+
+class Quality(BaseModel):
+    quality: str = Field(max_length=10, description="Quality description")
+
+class QualityInDB(Quality):
+    id: int
