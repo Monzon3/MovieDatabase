@@ -170,22 +170,22 @@ def add_genre_category(category:dict):
         db.execute(sql_query)
     
     except sql.Error as error:
-        raise HTTPException (status_code = 403, detail=f'{error.args[0]}: {error.args[1]}')
+        raise HTTPException (status_code = 406, detail=f'{error.args[0]}: {error.args[1]}')
 
     sql_query = f"""SELECT * FROM MovieDB.Genre_Categories 
                   WHERE Genre_Categories.Category = '{category['name']}';"""
     db.execute(sql_query)
     res = db.fetchone()
-    categoryInDB = {}
-    categoryInDB['id'] = res[0]
-    categoryInDB['name'] = res[1]
+    new_category = {}
+    new_category['id'] = res[0]
+    new_category['name'] = res[1]
 
     conn.commit()
 
     db.close()
     conn.close()
 
-    return categoryInDB
+    return new_category
 
 def add_language(language:dict):
     [conn, db] = connect_to_db()
@@ -233,9 +233,9 @@ def add_register(table, field, value):
     conn.close()
 
     if table == "Countries":
-        new_obj = {"id": res[0], "Country": res[1]}
+        new_obj = {"id": res[0], "country": res[1]}
     elif table == "Storage":
-        new_obj = {"id": res[0], "Device": res[1]}
+        new_obj = {"id": res[0], "device": res[1]}
 
     return new_obj
 

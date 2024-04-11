@@ -25,7 +25,7 @@ async def add_country(country: Country):
 async def devices():
     return dbConnector.get_all("Storage")
 
-@oth.post("/device", response_model=DeviceInDB, status_code=status.HTTP_201_CREATED)
+@oth.post("/devices", response_model=DeviceInDB, status_code=status.HTTP_201_CREATED)
 async def add_device(device: Device):
     return dbConnector.add_register("Storage", "Device", device.device)
 
@@ -41,7 +41,7 @@ async def add_director(director: Director):
 async def genres():
     return dbConnector.get_all("Genres")
 
-@oth.post("/genre_categories", response_model=GenreCategoryInDB)
+@oth.post("/genre_categories", response_model=GenreCategoryInDB, status_code=status.HTTP_201_CREATED)
 async def add_genre_category(category: GenreCategory):
     return dbConnector.add_genre_category(json(category))
 
