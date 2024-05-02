@@ -20,7 +20,7 @@ async def countries():
 
 @oth.post("/countries", response_model=CountryInDB, status_code=status.HTTP_201_CREATED)
 async def add_country(country: Country):
-    return dbConnector.add_register("Countries", "Country", country.country)
+    return dbConnector.add_register("Countries", country.name)
 
 @oth.get("/devices", response_model=list[DeviceInDB], status_code=status.HTTP_200_OK)
 async def devices():
@@ -28,7 +28,7 @@ async def devices():
 
 @oth.post("/devices", response_model=DeviceInDB, status_code=status.HTTP_201_CREATED)
 async def add_device(device: Device):
-    return dbConnector.add_register("Storage", "Device", device.device)
+    return dbConnector.add_register("Storage", device.name)
 
 @oth.get("/directors", response_model=list[DirectorInDB], status_code=status.HTTP_200_OK)
 async def directors():
@@ -64,28 +64,28 @@ async def qualities():
 
 @oth.post("/qualities", response_model=QualityInDB, status_code=status.HTTP_201_CREATED)
 async def add_quality(quality: Quality):
-    return dbConnector.add_register('Qualities', 'Quality', quality.quality)
+    return dbConnector.add_register('Qualities', quality.name)
 
 @oth.get("/country_in_device", response_model=list[CountryInDB], status_code=status.HTTP_200_OK)
 async def country_in_device(device: Device):
-    deviceID = dbConnector.get_object('Storage', 'Device', device.device)
+    deviceID = dbConnector.get_object('Storage', device.name)
     if deviceID:
-        return dbConnector.get_combined('Countries', 'Country', 'DeviceID', deviceID)
+        return dbConnector.get_combined('Countries', 'StorageID', deviceID)
     else: 
         raise HTTPException (status_code = 404, detail=f"Requested device is not in the database.")
 
 @oth.get("/quality_in_device", response_model=list[QualityInDB], status_code=status.HTTP_200_OK)
 async def quality_in_device(device: Device):
-    deviceID = dbConnector.get_object('Storage', 'Device', device.device)
+    deviceID = dbConnector.get_object('Storage', device.name)
     if deviceID:
-        return dbConnector.get_combined('Qualities', 'Quality', 'DeviceID', deviceID)
+        return dbConnector.get_combined('Qualities', 'StorageID', deviceID)
     else:
         raise HTTPException (status_code = 404, detail=f"Requested device is not in the database.")
 
 @oth.get("/device_in_country", response_model=list[DeviceInDB], status_code=status.HTTP_200_OK)
 async def device_in_country(country: Country):
-    countryID = dbConnector.get_object('Countries', 'Country', country.country)
+    countryID = dbConnector.get_object('Countries', country.name)
     if countryID:
-        return dbConnector.get_combined('Storage', 'Device', 'CountryID', countryID)
+        return dbConnector.get_combined('Storage', 'CountryID', countryID)
     else:
         raise HTTPException (status_code = 404, detail=f"Requested country is not in the database.")

@@ -104,27 +104,24 @@ def add_director(director:dict):
     sql_query = f"""INSERT INTO MovieDB.Directors (Name, CountryID) 
                     VALUES ('{director['name']}', 
                            (SELECT Countries.id FROM Countries 
-                           WHERE Countries.Country = '{director['country']}'));"""
+                           WHERE Countries.Name = '{director['country']}'));"""
     try:
         db.execute(sql_query)
+        conn.commit()
     
     except sql.Error as error:
         raise HTTPException (status_code = 406, detail=f'{error.args[0]}: {error.args[1]}')
 
-    sql_query = f"""SELECT Directors.id, Directors.Name, Countries.Country FROM MovieDB.Directors
+    sql_query = f"""SELECT Directors.id, Directors.Name, Countries.Name FROM MovieDB.Directors
                     INNER JOIN MovieDB.Countries ON Directors.CountryID = Countries.id 
                     WHERE Directors.Name = '{director['name']}';"""
+    
     db.execute(sql_query)
     res = db.fetchone()
-    new_director = {}
-    new_director["id"] = res[0]
-    new_director["name"] = res[1]
-    new_director["country"] = res[2]
-
-    conn.commit()
-
     db.close()
     conn.close()
+
+    new_director = {"id": res[0], "name": res[1], "country": res[2]}
 
     return new_director
 
@@ -134,56 +131,49 @@ def add_genre(genre:dict):
     sql_query = f"""INSERT INTO MovieDB.Genres (Name, CategoryID) 
                     VALUES ('{genre['name']}', 
                     (SELECT Genre_Categories.id FROM MovieDB.Genre_Categories 
-                    WHERE Genre_Categories.Category = '{genre['category']}'));"""
-    print(sql_query)
+                    WHERE Genre_Categories.Name = '{genre['category']}'));"""
+    
     try:
         db.execute(sql_query)
+        conn.commit()
     
     except sql.Error as error:
         raise HTTPException (status_code = 403, detail=f'{error.args[0]}: {error.args[1]}')
 
-    sql_query = f"""SELECT Genres.id, Genres.Name, Genre_Categories.Category 
+    sql_query = f"""SELECT Genres.id, Genres.Name, Genre_Categories.Name 
                     FROM MovieDB.Genres 
                     INNER JOIN Genre_Categories ON Genres.CategoryID = Genre_Categories.id
                     WHERE Genres.Name = '{genre['name']}';"""
-    print(sql_query)
+    
     db.execute(sql_query)
     res = db.fetchone()
-    genreInDBFull = {}
-    genreInDBFull['id'] = res[0]
-    genreInDBFull['name'] = res[1]
-    genreInDBFull['category'] = res[2]
-
-    conn.commit()
-
     db.close()
     conn.close()
-
-    return genreInDBFull
+    
+    new_genre = {"id": res[0], "name": res[1], "category": res[2]}
+    
+    return new_genre
 
 def add_genre_category(category:dict):
     [conn, db] = connect_to_db()
 
-    sql_query = f"""INSERT INTO MovieDB.Genre_Categories (Category) 
+    sql_query = f"""INSERT INTO MovieDB.Genre_Categories (Name) 
                     VALUES ('{category['name']}');"""
     try:
         db.execute(sql_query)
+        conn.commit()
     
     except sql.Error as error:
         raise HTTPException (status_code = 406, detail=f'{error.args[0]}: {error.args[1]}')
 
     sql_query = f"""SELECT * FROM MovieDB.Genre_Categories 
-                  WHERE Genre_Categories.Category = '{category['name']}';"""
+                  WHERE Genre_Categories.Name = '{category['name']}';"""
     db.execute(sql_query)
     res = db.fetchone()
-    new_category = {}
-    new_category['id'] = res[0]
-    new_category['name'] = res[1]
-
-    conn.commit()
-
     db.close()
     conn.close()
+
+    new_category = {"id": res[0], "name": res[1]}
 
     return new_category
 
@@ -214,10 +204,10 @@ def add_language(language:dict):
 
     return languageInDB
 
-def add_register(table, field, value):
+def add_register(table, value):
     [conn, db] = connect_to_db()
 
-    sql_query = f"""INSERT INTO MovieDB.{table} ({field}) VALUES ('{value}');"""
+    sql_query = f"""INSERT INTO MovieDB.{table} (Name) VALUES ('{value}');"""
     try:
         db.execute(sql_query)
         conn.commit()
@@ -225,19 +215,13 @@ def add_register(table, field, value):
     except sql.Error as error:
         raise HTTPException (status_code = 406, detail=f'{error.args[0]}: {error.args[1]}')
 
-    sql_query = f"SELECT {table}.id, {table}.{field} FROM MovieDB.{table} WHERE {field} = '{value}';"
+    sql_query = f"SELECT {table}.id, {table}.Name FROM MovieDB.{table} WHERE Name = '{value}';"
     db.execute(sql_query)
     res = db.fetchone()
-
     db.close()
     conn.close()
 
-    if table == "Countries":
-        new_obj = {"id": res[0], "country": res[1]}
-    elif table == "Storage":
-        new_obj = {"id": res[0], "device": res[1]}
-    elif table == "Qualities":
-        new_obj = {"id": res[0], "quality": res[1]}
+    new_obj = {"id": res[0], "name": res[1]}
 
     return new_obj
 
@@ -262,13 +246,13 @@ def get_all(table:str):
     [conn, db] = connect_to_db()
 
     if table == "Genres":
-       sql_query = """SELECT Genres.id, Genres.Name, Genre_Categories.Category 
+       sql_query = """SELECT Genres.id, Genres.Name, Genre_Categories.Name 
                       FROM MovieDB.Genres
                       INNER JOIN MovieDB.Genre_Categories 
                       ON Genres.CategoryID = Genre_Categories.id;""" 
     elif table == "Directors":      # LEFT JOIN because some Directors have CountryID = None
         sql_query = f"""SELECT Directors.id, Directors.Name,
-                        Countries.Country FROM MovieDB.Directors
+                        Countries.Name FROM MovieDB.Directors
                         LEFT JOIN MovieDB.Countries ON Directors.CountryID = Countries.id;"""
     else:
         sql_query =f"""SELECT * FROM MovieDB.{table};"""
@@ -276,18 +260,14 @@ def get_all(table:str):
     db.execute(sql_query)
     res = db.fetchall()
 
-    if table == "Countries":
-        obj_list = [{"id":res[i][0], "country":res[i][1]} for i in range(len(res))]
-    elif table == "Storage":
-        obj_list = [{"id":res[i][0], "device":res[i][1]} for i in range(len(res))]
+    if table == "Countries" or table == "Storage" or table == "Qualities":
+        obj_list = [{"id":res[i][0], "name":res[i][1]} for i in range(len(res))]
     elif table == "Directors":
         obj_list = [{"id":res[i][0], "name":res[i][1], "country":res[i][2]} for i in range(len(res))]
     elif table == "Genres":
         obj_list = [{"id": res[i][0], "name":res[i][1], "category":res[i][2]} for i in range(len(res))]
     elif table == "Languages":
         obj_list = [{"id": res[i][0], "short": res[i][1], "complete": res[i][2]} for i in range(len(res))]
-    elif table == "Qualities":
-        obj_list = [{"id":res[i][0], "quality":res[i][1]} for i in range(len(res))]
 
     db.close()
     conn.close()
@@ -331,33 +311,34 @@ def get_all_films(field: str, order_by:str):
     return films
 
 
-def get_combined(table, col, filter_col, value):
+def get_combined(table, filter_col, value):
     '''get_combined will filter the Main table by a defined column and value, and from those filtered rows
     will return the distinct entries find in another desired column. It will return the names and not just IDs.
     For example, will get all different qualities found for a given Storage device, 
     or all countries found for a given quality. 
 
     - table: The table that contains the information to be retrieved
-    - col: The name of the column to retrieve its distinct values
     - filter_col: The field to filter the Main table by
     - value: The value to filter by.'''
 
+    if table == "Countries":
+        col = "CountryID"
+    elif table == "Qualities":
+        col = "QualityID"
+    elif table == "Storage":
+        col = "StorageID"
+
     [conn, db] = connect_to_db()
-    sql_query = f'''SELECT DISTINCT {table}.id, {table}.{col}
+    sql_query = f'''SELECT DISTINCT {table}.id, {table}.Name
                     FROM MovieDB.Main
-                    INNER JOIN MovieDB.{table} ON Main.{col}ID={table}.id
+                    INNER JOIN MovieDB.{table} ON Main.{col}={table}.id
                     WHERE Main.{filter_col} = {value}
-                    ORDER BY {table}.{col};'''
+                    ORDER BY {table}.Name;'''
 
     db.execute(sql_query)
     res = db.fetchall()
 
-    if table == "Countries":
-        obj_list = [{"id": res[i][0], "country": res[i][1]} for i in range(len(res))]
-    elif table == "Qualities":
-        obj_list = [{"id": res[i][0], "quality": res[i][1]} for i in range(len(res))]
-    elif table == "Storage":
-        obj_list = [{"id": res[i][0], "device": res[i][1]} for i in range(len(res))]
+    obj_list = [{"id": res[i][0], "name": res[i][1]} for i in range(len(res))]
 
     db.close()
     conn.close()
@@ -498,15 +479,17 @@ def get_film(film:dict):
     return films
 
 
-def get_object(table, field, value):
+def get_object(table, value):
     [conn, db] = connect_to_db()
-    sql_query = f'''SELECT {table}.id FROM MovieDB.{table} WHERE {table}.{field} = "{value}";'''
+    sql_query = f'''SELECT {table}.id FROM MovieDB.{table} WHERE {table}.Name = "{value}";'''
     
     db.execute(sql_query)
     res = db.fetchone()
 
-    if res: data = res[0]
-    else: data = ''
+    if res: 
+        data = res[0]
+    else: 
+        data = ''
 
     db.close()
     conn.close()

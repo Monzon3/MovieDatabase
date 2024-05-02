@@ -2,13 +2,13 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 class Country(BaseModel):
-    country: str = Field(max_length=25, description="Name of the country")
+    name: str = Field(max_length=25, description="Name of the country")
 
 class CountryInDB(Country):
     id: int
 
 class Device(BaseModel):
-    device: str = Field(max_length=20, description="Name of the storage device")
+    name: str = Field(max_length=20, description="Name of the storage device")
 
 class DeviceInDB(Device):
     id: int
@@ -43,7 +43,7 @@ class LanguageInDB(Language):
     id: int
 
 class Quality(BaseModel):
-    quality: str = Field(max_length=10, description="Quality description")
+    name: str = Field(max_length=10, description="Quality description")
 
 class QualityInDB(Quality):
     id: int
