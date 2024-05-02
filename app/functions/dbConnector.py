@@ -278,10 +278,10 @@ def get_all(table:str):
 def get_all_films(field: str, order_by:str):
     [conn, db] = connect_to_db()
 
-    sql_query = f"""SELECT Main.id, Main.Title, Main.OriginalTitle, Storage.Device, Qualities.Quality, 
-                    Main.Year, Countries.Country, Main.Length, Main.Screenplay, Main.Score, Main.Image
+    sql_query = f"""SELECT Main.id, Main.Title, Main.OriginalTitle, Storage.Name, Qualities.Name, 
+                    Main.Year, Countries.Name, Main.Length, Main.Screenplay, Main.Score, Main.Image
                     FROM MovieDB.Main
-                    INNER JOIN MovieDB.Storage ON Main.DeviceID = Storage.id
+                    INNER JOIN MovieDB.Storage ON Main.StorageID = Storage.id
                     INNER JOIN MovieDB.Qualities ON Main.QualityID = Qualities.id
                     INNER JOIN MovieDB.Countries ON Main.CountryID = Countries.id
                     ORDER BY Main.{field} {order_by};"""
@@ -370,17 +370,17 @@ def get_film(film:dict):
         flag = 1
 
     if film['storageDevice'] != "" and flag == 1:
-        storageAux = f" AND Storage.Device = '{film['storageDevice']}'"
+        storageAux = f" AND Storage.Name = '{film['storageDevice']}'"
         
     elif film['storageDevice'] != "" and flag == 0:
-        storageAux = f"Storage.Device = '{film['storageDevice']}'"
+        storageAux = f"Storage.Name = '{film['storageDevice']}'"
         flag = 1
 
     if film['quality'] != "" and flag == 1:
-        qualityAux = f" AND Qualities.Quality = '{film['quality']}'"
+        qualityAux = f" AND Qualities.Name = '{film['quality']}'"
         
     elif film['quality'] != "" and flag == 0:
-        qualityAux = f"Qualities.Quality = '{film['quality']}'"
+        qualityAux = f"Qualities.Name = '{film['quality']}'"
         flag = 1
 
     if film['year1'] != None and film['year2'] == None and flag == 1:
@@ -395,10 +395,10 @@ def get_film(film:dict):
         flag = 1
 
     if film['country'] != "" and flag == 1:
-        countryAux = f" AND Countries.Country = '{film['country']}'"
+        countryAux = f" AND Countries.Name = '{film['country']}'"
         
     elif film['country'] != "" and flag == 0:
-        countryAux = f"Countries.Country = '{film['country']}'"
+        countryAux = f"Countries.Name = '{film['country']}'"
         flag = 1
 
     if film['length'] != "":
@@ -442,10 +442,10 @@ def get_film(film:dict):
        and screenplayAux == "": 
         raise HTTPException (status_code = 400, detail="You have not filled anything to look for.")
 
-    fields = """Main.id, Main.Title, Main.OriginalTitle, Storage.Device, Qualities.Quality, 
-                Main.Year, Countries.Country, Main.Length, Main.Screenplay, Main.Score, Main.Image """
+    fields = """Main.id, Main.Title, Main.OriginalTitle, Storage.Name, Qualities.Name, 
+                Main.Year, Countries.Name, Main.Length, Main.Screenplay, Main.Score, Main.Image """
 
-    join_str = """INNER JOIN MovieDB.Storage ON Main.DeviceID = Storage.id
+    join_str = """INNER JOIN MovieDB.Storage ON Main.StorageID = Storage.id
                   INNER JOIN MovieDB.Qualities ON Main.QualityID = Qualities.id
                   INNER JOIN MovieDB.Countries ON Main.CountryID = Countries.id"""
 
