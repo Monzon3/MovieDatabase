@@ -1,6 +1,5 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import functions.dbConnector as dbConnector
 import os
 from routes.films import flm
 from routes.other import oth
