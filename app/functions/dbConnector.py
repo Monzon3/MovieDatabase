@@ -1,6 +1,6 @@
-''' Definition of the dbConnector class to connect with the MySQL database.
+""" Definition of the dbConnector class to connect with the MySQL database.
 If there were more than one database, the connector can be updated to take arguments and 
-connect to different databases.'''
+connect to different databases."""
 
 #from bson.objectid import ObjectId
 #from datetime import datetime
@@ -52,19 +52,18 @@ def create_user(user:dict):
 
 def get_user(user:str):
     [conn, db] = connect_to_db()
-    sql_query = f'''SELECT Name, Email, User_rank, 
-                Disabled, Deleted FROM MovieDB.Users
-                WHERE Name="{user}";'''
+    sql_query = f"""SELECT Name, Email, RankID, Password, Disabled 
+                FROM MovieDB.Users WHERE Name='{user}';"""
 
     db.execute(sql_query)
     res = db.fetchone()
 
     if res:
-        user = {'username': res[0],
-                'email': res[1],
-                'user_rank': res[2],
-                'disabled': res[3],
-                'deleted': res[4]}
+        user = {"username": res[0],
+                "email": res[1],
+                "rankID": res[2],
+                "password": res[3],
+                "disabled": res[4]}
 
     db.close()
     conn.close()

@@ -6,7 +6,6 @@ from pydantic import BaseModel
 
 from .users import(
 #    AdminUpdatedUser,
-    NewUser,
 #    UpdatedUser,
     User,
     UserInDB

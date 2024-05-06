@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder as json
 import functions.dbConnector as dbConnector
 from models.other import (
@@ -9,64 +9,93 @@ from models.other import (
     GenreCategory, GenreCategoryInDB, 
     Language, LanguageInDB, 
     Quality, QualityInDB)
+from services.auth import get_current_active_user
 
 oth = APIRouter(prefix="/other",
                 tags=["Route for secondary tables management"],
                 responses={404: {"description": "Not found"}})
 
-@oth.get("/countries", response_model=list[CountryInDB], status_code=status.HTTP_200_OK)
+@oth.get("/countries", response_model=list[CountryInDB], 
+         dependencies=[Depends(get_current_active_user)],
+         status_code=status.HTTP_200_OK)
 async def countries():
     return dbConnector.get_all("Countries")
 
-@oth.post("/countries", response_model=CountryInDB, status_code=status.HTTP_201_CREATED)
+@oth.post("/countries", response_model=CountryInDB, 
+          dependencies=[Depends(get_current_active_user)],
+          status_code=status.HTTP_201_CREATED)
 async def add_country(country: Country):
     return dbConnector.add_register("Countries", country.name)
 
-@oth.get("/devices", response_model=list[DeviceInDB], status_code=status.HTTP_200_OK)
+@oth.get("/devices", response_model=list[DeviceInDB], 
+         dependencies=[Depends(get_current_active_user)],
+         status_code=status.HTTP_200_OK)
 async def devices():
     return dbConnector.get_all("Storage")
 
-@oth.post("/devices", response_model=DeviceInDB, status_code=status.HTTP_201_CREATED)
+@oth.post("/devices", response_model=DeviceInDB, 
+          dependencies=[Depends(get_current_active_user)],
+          status_code=status.HTTP_201_CREATED)
 async def add_device(device: Device):
     return dbConnector.add_register("Storage", device.name)
 
-@oth.get("/directors", response_model=list[DirectorInDB], status_code=status.HTTP_200_OK)
+@oth.get("/directors", response_model=list[DirectorInDB], 
+         dependencies=[Depends(get_current_active_user)],
+         status_code=status.HTTP_200_OK)
 async def directors():
     return dbConnector.get_all("Directors")
 
-@oth.post("/directors", response_model=DirectorInDB, status_code=status.HTTP_201_CREATED)
+@oth.post("/directors", response_model=DirectorInDB, 
+          dependencies=[Depends(get_current_active_user)],
+          status_code=status.HTTP_201_CREATED)
 async def add_director(director: Director):
     return dbConnector.add_director(json(director))
 
-@oth.get("/genres", response_model=list[GenreInDBFull], status_code=status.HTTP_200_OK)
+@oth.get("/genres", response_model=list[GenreInDBFull], 
+         dependencies=[Depends(get_current_active_user)],
+         status_code=status.HTTP_200_OK)
 async def genres():
     return dbConnector.get_all("Genres")
 
-@oth.post("/genre_categories", response_model=GenreCategoryInDB, status_code=status.HTTP_201_CREATED)
+@oth.post("/genre_categories", response_model=GenreCategoryInDB, 
+          dependencies=[Depends(get_current_active_user)],
+          status_code=status.HTTP_201_CREATED)
 async def add_genre_category(category: GenreCategory):
     return dbConnector.add_genre_category(json(category))
 
-@oth.post("/genres", response_model=GenreInDBFull, status_code=status.HTTP_201_CREATED)
+@oth.post("/genres", response_model=GenreInDBFull, 
+          dependencies=[Depends(get_current_active_user)],
+          status_code=status.HTTP_201_CREATED)
 async def add_genre(genre: Genre):
     return dbConnector.add_genre(json(genre))
 
-@oth.get("/languages", response_model=list[LanguageInDB], status_code=status.HTTP_200_OK)
+@oth.get("/languages", response_model=list[LanguageInDB], 
+         dependencies=[Depends(get_current_active_user)],
+         status_code=status.HTTP_200_OK)
 async def languages():
     return dbConnector.get_all('Languages')
 
-@oth.post("/languages", response_model=LanguageInDB, status_code=status.HTTP_201_CREATED)
+@oth.post("/languages", response_model=LanguageInDB, 
+          dependencies=[Depends(get_current_active_user)],
+          status_code=status.HTTP_201_CREATED)
 async def add_language(language: Language):
     return dbConnector.add_language(json(language))
 
-@oth.get("/qualities", response_model=list[QualityInDB], status_code=status.HTTP_200_OK)
+@oth.get("/qualities", response_model=list[QualityInDB], 
+         dependencies=[Depends(get_current_active_user)],
+         status_code=status.HTTP_200_OK)
 async def qualities():
     return dbConnector.get_all('Qualities')
 
-@oth.post("/qualities", response_model=QualityInDB, status_code=status.HTTP_201_CREATED)
+@oth.post("/qualities", response_model=QualityInDB, 
+          dependencies=[Depends(get_current_active_user)],
+          status_code=status.HTTP_201_CREATED)
 async def add_quality(quality: Quality):
     return dbConnector.add_register('Qualities', quality.name)
 
-@oth.get("/country_in_device", response_model=list[CountryInDB], status_code=status.HTTP_200_OK)
+@oth.get("/country_in_device", response_model=list[CountryInDB], 
+         dependencies=[Depends(get_current_active_user)],
+         status_code=status.HTTP_200_OK)
 async def country_in_device(device: Device):
     deviceID = dbConnector.get_object('Storage', device.name)
     if deviceID:
@@ -74,7 +103,9 @@ async def country_in_device(device: Device):
     else: 
         raise HTTPException (status_code = 404, detail=f"Requested device is not in the database.")
 
-@oth.get("/quality_in_device", response_model=list[QualityInDB], status_code=status.HTTP_200_OK)
+@oth.get("/quality_in_device", response_model=list[QualityInDB], 
+         dependencies=[Depends(get_current_active_user)],
+         status_code=status.HTTP_200_OK)
 async def quality_in_device(device: Device):
     deviceID = dbConnector.get_object('Storage', device.name)
     if deviceID:
@@ -82,7 +113,9 @@ async def quality_in_device(device: Device):
     else:
         raise HTTPException (status_code = 404, detail=f"Requested device is not in the database.")
 
-@oth.get("/device_in_country", response_model=list[DeviceInDB], status_code=status.HTTP_200_OK)
+@oth.get("/device_in_country", response_model=list[DeviceInDB], 
+         dependencies=[Depends(get_current_active_user)],
+         status_code=status.HTTP_200_OK)
 async def device_in_country(country: Country):
     countryID = dbConnector.get_object('Countries', country.name)
     if countryID:
