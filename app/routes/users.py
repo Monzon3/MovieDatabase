@@ -1,23 +1,9 @@
 from fastapi import APIRouter, Depends
-from fastapi.encoders import jsonable_encoder as json
 from fastapi.security import OAuth2PasswordRequestForm
-import functions.dbConnector as dbConnector
-from models import(
-#    Token,
-#    AdminUpdatedUser,
-#    UpdatedUser,
-    User,
-#    UserInDB
-     )
-#from services.authenticator import(
-#    check_admin, 
-#    get_info_if_active_user,
-#    obtain_token)
-from models.users import Token, UserInDB
+from models.users import Token, User
 from services.auth import (
     get_current_active_user,
-    obtain_token
-)
+    obtain_token)
 
 usr = APIRouter(prefix="/users",
                 tags=["Route for users management"],

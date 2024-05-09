@@ -8,7 +8,6 @@ from fastapi import HTTPException
 from dotenv import load_dotenv
 import os
 import pymysql as sql
-#from pytz import timezone
 
 load_dotenv()
 
@@ -50,10 +49,13 @@ def create_user(user:dict):
     return get_user(user['username'])
 
 
-def get_user(user:str):
+def get_user(username:str):
     [conn, db] = connect_to_db()
-    sql_query = f"""SELECT Name, Email, RankID, Password, Disabled 
-                FROM MovieDB.Users WHERE Name='{user}';"""
+    sql_query = f"""SELECT Users.Name, Users.Email, User_ranks.Name, 
+                Users.Password, Users.Disabled 
+                FROM MovieDB.Users 
+                INNER JOIN User_ranks ON User_ranks.id = Users.RankID
+                WHERE Users.Name='{username}';"""
 
     db.execute(sql_query)
     res = db.fetchone()
@@ -61,14 +63,16 @@ def get_user(user:str):
     if res:
         user = {"username": res[0],
                 "email": res[1],
-                "rankID": res[2],
+                "user_rank": res[2],
                 "password": res[3],
                 "disabled": res[4]}
 
-    db.close()
-    conn.close()
+        db.close()
+        conn.close()
 
-    return user
+        return user
+    else:
+        return None
 
 
 def get_all_users():
@@ -93,6 +97,7 @@ def get_all_users():
     conn.close()
 
     return users_list
+
 
 #####################
 ## GENERAL METHODS ##

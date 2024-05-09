@@ -14,6 +14,7 @@ services:
       - MYSQL_USER=${SQL_ADMIN_USERNAME}
       - MYSQL_PASSWORD=${SQL_ADMIN_PASSWORD}
       - MYSQL_ROOT_PASSWORD=${SQL_ROOT_PASSWORD}
+      - SECRET_KEY=${JWT_SECRET_KEY}
       - TAG=${TAG}
     command: uvicorn api:app --reload --host 0.0.0.0 --port 8000
     ports:

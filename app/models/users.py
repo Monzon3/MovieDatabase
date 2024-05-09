@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Literal, Optional
 
 
 class User(BaseModel):
@@ -9,12 +9,12 @@ class User(BaseModel):
     password: str = Field(description="The password cannot be empty", min_length=1)
     email: str = Field(example="valid_email@server.com",
                        pattern=r"^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$")
-    user_rank: int
+    user_rank: Literal["admin", "powerUser", "user"]
     disabled: Optional[bool] = False
-
 
 class UserInDB(User):
     id: int
+
 
 # Token-related classes
 class Token(BaseModel):
