@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
+from fastapi.encoders import jsonable_encoder as json
 from fastapi.security import OAuth2PasswordRequestForm
-from models.users import Token, User
+import functions.dbConnector as dbConnector
+from models.users import Token, UpdatedUser, User, UserSecure, UserInDB
 from services.auth import (
     get_current_active_user,
     obtain_token)
@@ -8,12 +10,6 @@ from services.auth import (
 usr = APIRouter(prefix="/users",
                 tags=["Route for users management"],
                 responses={404: {"description": "Not found"}})
-
-
-# Create a new user into the database                 
-#@usr.post("", response_model=User)
-#async def create_new_user(new_user: NewUser):
-#    return dbConnector.create_user(json(new_user))
 
 
 ## Update user entry 
@@ -32,24 +28,33 @@ usr = APIRouter(prefix="/users",
 #async def get_user(username:str):
 #    return dbConnector.get_user(username)
 #
-#@usr.get("/get_all", response_model=list[UserInDB])
-#async def get_all_users():
-#    return dbConnector.get_all_users() 
-
-## Get user information from current active user                      
-#@usr.get("/me", response_model=UserInDB)
-#async def read_users_me(current_user: UserInDB = Depends(get_info_if_active_user)):
-#    return current_user
 
 
-## Update user entry 
+@usr.get("/me/", response_model=UserSecure, status_code=status.HTTP_200_OK)
+async def read_users_me(current_user: User=Depends(get_current_active_user)):
+    return current_user
+
+# Update user entry 
 #@usr.put("/me")
 #async def update_my_user(updated_info: UpdatedUser, current_user: UserInDB=Depends(get_info_if_active_user)):
 #    return conn_usr.update_my_user(user=json(current_user), new_data=json(updated_info))
 
-@usr.get("/me/", response_model=User)
-async def read_users_me(current_user: User=Depends(get_current_active_user)):
-    return current_user
+@usr.get("/all", response_model=list[UserInDB], dependencies=[Depends(get_current_active_user)],
+                 status_code=status.HTTP_200_OK)
+async def get_all_users():
+    return dbConnector.get_all_users()
+
+# Insert a new user into the database                 
+@usr.post("/", response_model=UserInDB, dependencies=[Depends(get_current_active_user)],
+               status_code=status.HTTP_201_CREATED)
+async def create_new_user(new_user: User):
+    return dbConnector.create_user(json(new_user))
+
+# Update user information
+@usr.put("/{id}", response_model=UserInDB, dependencies=[Depends(get_current_active_user)],
+                  status_code=status.HTTP_200_OK)
+async def update_user(updated_info: UpdatedUser, user_id: int):
+    return dbConnector.update_user(user_id=user_id, user_mod=json(updated_info))
 
 # Login to get an access token                             
 @usr.post("/token", response_model=Token)

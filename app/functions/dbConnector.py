@@ -8,6 +8,7 @@ from fastapi import HTTPException
 from dotenv import load_dotenv
 import os
 import pymysql as sql
+from services.auth import crypt
 
 load_dotenv()
 
@@ -34,11 +35,19 @@ def connect_to_db():
  ###################
 def create_user(user:dict):
     [conn, db] = connect_to_db()
-    sql_query = f'''INSERT INTO MovieDB.Users (Name, Password, Email, 
-                    User_rank, Disabled, Deleted) VALUES 
-                    ("{user['username']}", "{user['password']}", 
-                    "{user['email']}", "{user['user_rank']}", 
-                    {user['disabled']}, {user['deleted']});'''
+    # Query to convert User_rank into its id
+    sel_query = f"""SELECT User_ranks.id FROM MovieDB.User_ranks
+                    WHERE User_ranks.Name = '{user['user_rank']}'"""
+    
+    # Hashed password to store in the database for better security
+    hashed_password = crypt.hash(user['password'])
+
+    # Full query
+    sql_query = f"""INSERT INTO MovieDB.Users (Name, Password, Email, 
+                    RankID, Disabled) VALUES 
+                    ('{user['username']}', '{hashed_password}', 
+                    '{user['email']}', ({sel_query}), 
+                    {user['disabled']});"""
 
     db.execute(sql_query)
     conn.commit()
@@ -49,9 +58,35 @@ def create_user(user:dict):
     return get_user(user['username'])
 
 
+def get_all_users():
+    [conn, db] = connect_to_db()
+    sql_query = f"""SELECT Users.id, Users.Name, Users.Email, 
+                User_ranks.Name, Users.Password, Users.Disabled 
+                FROM MovieDB.Users 
+                INNER JOIN User_ranks ON User_ranks.id = Users.RankID;"""
+
+    db.execute(sql_query)
+    res = db.fetchall()
+
+    users_list = []
+    for i in range(len(res)):
+        users_list.append(
+            {"id": res[i][0],
+             "username": res[i][1],
+             "email": res[i][2],
+             "user_rank": res[i][3],
+             "password": res[i][4],
+             "disabled": res[i][5]})
+
+    db.close()
+    conn.close()
+
+    return users_list
+
+
 def get_user(username:str):
     [conn, db] = connect_to_db()
-    sql_query = f"""SELECT Users.Name, Users.Email, User_ranks.Name, 
+    sql_query = f"""SELECT Users.id, Users.Name, Users.Email, User_ranks.Name, 
                 Users.Password, Users.Disabled 
                 FROM MovieDB.Users 
                 INNER JOIN User_ranks ON User_ranks.id = Users.RankID
@@ -61,11 +96,12 @@ def get_user(username:str):
     res = db.fetchone()
 
     if res:
-        user = {"username": res[0],
-                "email": res[1],
-                "user_rank": res[2],
-                "password": res[3],
-                "disabled": res[4]}
+        user = {"id": res[0],
+                "username": res[1],
+                "email": res[2],
+                "user_rank": res[3],
+                "password": res[4],
+                "disabled": res[5]}
 
         db.close()
         conn.close()
@@ -75,28 +111,65 @@ def get_user(username:str):
         return None
 
 
-def get_all_users():
+def get_user_by_id(user_id:int):
     [conn, db] = connect_to_db()
-    sql_query =f'''SELECT id, Name, Email, User_rank, 
-                Disabled, Deleted FROM MovieDB.Users;'''
+    sql_query = f"""SELECT Users.id, Users.Name, Users.Email, User_ranks.Name, 
+                Users.Password, Users.Disabled 
+                FROM MovieDB.Users 
+                INNER JOIN User_ranks ON User_ranks.id = Users.RankID
+                WHERE Users.id={user_id};"""
 
     db.execute(sql_query)
-    res = db.fetchall()
+    res = db.fetchone()
 
-    users_list = []
-    for i in range(len(res)):
-        users_list.append(
-            {'id': res[i][0],
-             'username': res[i][1],
-             'email': res[i][2],
-             'user_rank': res[i][3],
-             'disabled': res[i][4],
-             'deleted': res[i][5]})
+    if res:
+        user = {"id": res[0],
+                "username": res[1],
+                "email": res[2],
+                "user_rank": res[3],
+                "password": res[4],
+                "disabled": res[5]}
+
+        db.close()
+        conn.close()
+
+        return user
+    else:
+        return None
+
+
+def update_user(user_id: int, user_mod:dict):
+    print(user_mod)
+    # Create a 'new_values' dict to filter those optional values left blank by the user.
+    # Otherwise, they would overwrite the real values in those fields, leaving them empty. 
+    new_values = {k:user_mod[k] for k in user_mod.keys() if user_mod[k] != None}
+    print(new_values)
+
+    [conn, db] = connect_to_db()
+    # Query to convert User_rank into its id
+    #sel_query = f"""SELECT User_ranks.id FROM MovieDB.User_ranks
+    #                WHERE User_ranks.Name = '{user['user_rank']}'"""
+    
+    # Hashed password to store in the database for better security
+    if "password" in new_values.keys():
+        new_values['password'] = crypt.hash(new_values['password'])
+
+    set_str = ", ".join([f"Users.{k}='{new_values[k]}'" for k in new_values.keys()])
+    set_str = set_str.replace("'True'", "TRUE")
+    set_str = set_str.replace("'False'", "FALSE")
+    # Full query
+    sql_query = f"""UPDATE MovieDB.Users SET {set_str}
+                    WHERE Users.id = {user_id};"""
+
+    print(sql_query)
+
+    db.execute(sql_query)
+    conn.commit()
 
     db.close()
     conn.close()
 
-    return users_list
+    return get_user_by_id(user_id)
 
 
 #####################

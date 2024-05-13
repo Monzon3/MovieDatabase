@@ -1,18 +1,31 @@
 from pydantic import BaseModel, Field
 from typing import Literal, Optional
 
+class UpdatedUser(BaseModel):
+    Name: Optional[str] = Field(description="The username cannot be empty", 
+                          pattern=r"[0-9A-Za-z_]", 
+                          min_length=1, max_length=20, default=None)
+    Email: Optional[str] = Field(example="valid_email@server.com",
+                       pattern=r"^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$",
+                       default=None)
+    Password: Optional[str] = Field(description="The password cannot be empty", min_length=1,
+                                    default=None)
+    RankID: Literal[1, 2, 3] = None
+    Disabled: Optional[bool] = False
 
-class User(BaseModel):
+class UserSecure(BaseModel):
     username: str = Field(description="The username cannot be empty", 
                           pattern=r"[0-9A-Za-z_]", 
                           min_length=1, max_length=20)
-    password: str = Field(description="The password cannot be empty", min_length=1)
     email: str = Field(example="valid_email@server.com",
                        pattern=r"^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$")
     user_rank: Literal["admin", "powerUser", "user"]
     disabled: Optional[bool] = False
 
-class UserInDB(User):
+class User(UserSecure):
+    password: str = Field(description="The password cannot be empty", min_length=1)
+
+class UserInDB(UserSecure):
     id: int
 
 
