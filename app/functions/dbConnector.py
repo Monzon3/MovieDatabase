@@ -58,6 +58,20 @@ def create_user(user:dict):
     return get_user(user['username'])
 
 
+def delete_user(user_id: int):
+    [conn, db] = connect_to_db()
+    sql_query = f"""DELETE FROM MovieDB.Users
+                    WHERE Users.id={user_id};"""
+
+    db.execute(sql_query)
+    conn.commit()
+
+    db.close()
+    conn.close()
+
+    return f"User with id = {user_id} has been deleted." 
+
+
 def get_all_users():
     [conn, db] = connect_to_db()
     sql_query = f"""SELECT Users.id, Users.Name, Users.Email, 
@@ -146,13 +160,10 @@ def update_user(user_id: int, user_mod:dict):
     print(new_values)
 
     [conn, db] = connect_to_db()
-    # Query to convert User_rank into its id
-    #sel_query = f"""SELECT User_ranks.id FROM MovieDB.User_ranks
-    #                WHERE User_ranks.Name = '{user['user_rank']}'"""
     
     # Hashed password to store in the database for better security
-    if "password" in new_values.keys():
-        new_values['password'] = crypt.hash(new_values['password'])
+    if "Password" in new_values.keys():
+        new_values['Password'] = crypt.hash(new_values['Password'])
 
     set_str = ", ".join([f"Users.{k}='{new_values[k]}'" for k in new_values.keys()])
     set_str = set_str.replace("'True'", "TRUE")
@@ -165,12 +176,11 @@ def update_user(user_id: int, user_mod:dict):
 
     db.execute(sql_query)
     conn.commit()
-
     db.close()
     conn.close()
-
+ 
     return get_user_by_id(user_id)
-
+    
 
 #####################
 ## GENERAL METHODS ##

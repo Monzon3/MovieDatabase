@@ -69,6 +69,13 @@ async def get_current_active_user(current_user: User=Depends(get_current_user)):
     return current_user
 
 
+async def check_admin(current_user: User=Depends(get_current_active_user)):
+    if current_user['user_rank'] != "admin":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail="Your User_rank must be 'admin' in order to perform this action.")
+    return current_user
+
+
 # Token-related methods
 def generate_token(data: dict, expires_delta: Optional[timedelta]=None):
     """generate_token() is called from obtain_token() if the user is properly authenticated and 'enabled'."""
