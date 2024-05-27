@@ -6,14 +6,13 @@ from routes.other import oth
 from routes.users import usr
 
 description = """
-## This is an API to manage the Movie database 2024.
-
-"""
+## This is an API to manage the Movie database 2024."""
 
 app = FastAPI(
     title="Movie Database API",
     version=os.getenv("TAG").replace(":", ""),
     description=description,
+    contact={"name": "Sergio Monzón", "email": "sergio.monzon3@gmail.com"}
 )
 
 origins = ["*"]

@@ -2,8 +2,6 @@
 If there were more than one database, the connector can be updated to take arguments and 
 connect to different databases."""
 
-#from bson.objectid import ObjectId
-#from datetime import datetime
 from fastapi import HTTPException, status
 from dotenv import load_dotenv
 import os

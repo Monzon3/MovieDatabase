@@ -11,7 +11,8 @@ class UpdatedUser(BaseModel):
 
 # AdminUpdatedUser allows the admin to modify the Name and RankID of the user
 class AdminUpdatedUser(UpdatedUser):
-    Name: Optional[str] = Field(description="The username cannot be empty", 
+    Name: Optional[str] = Field(description="The username cannot be empty",  
+                          example="example_name",
                           pattern=r"[0-9A-Za-z_]", 
                           min_length=1, max_length=20, default=None)
     RankID: Literal[1, 2, 3] = None
@@ -20,6 +21,7 @@ class AdminUpdatedUser(UpdatedUser):
 # UserSecure does not have the password attribute, even if it is hashed
 class UserSecure(BaseModel):
     username: str = Field(description="The username cannot be empty", 
+                          example="example_name",
                           pattern=r"[0-9A-Za-z_]", 
                           min_length=1, max_length=20)
     email: str = Field(example="valid_email@server.com",

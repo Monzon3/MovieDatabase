@@ -16,7 +16,7 @@ class DeviceInDB(Device):
 class Director(BaseModel):
     # Max values should match those in the definition of the database
     name: str = Field(max_length=200)
-    country: Optional[str] = Field(max_length=25, default=None)
+    country: str = Field(max_length=25)
 
 class DirectorInDB(Director):
     id: int
@@ -25,7 +25,7 @@ class Genre(BaseModel):
     name: str = Field(min_length=1, max_length=40)
     category: str = Field(min_length=1, max_length=15)
 
-class GenreInDBFull(Genre):
+class GenreInDB(Genre):
     id: int
 
 class GenreCategory(BaseModel):
