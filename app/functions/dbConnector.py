@@ -511,7 +511,8 @@ def get_film(film: dict):
     if titleAux == "" and origTitleAux == "" and storageAux == "" and qualityAux == "" and \
        yearAux == "" and countryAux == "" and lengthAux == "" and scoreAux == "" \
        and screenplayAux == "": 
-        raise HTTPException (status_code = 400, detail="You have not filled anything to look for.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                            detail="You have not filled anything to look for.")
 
     fields = """Main.id, Main.Title, Main.OriginalTitle, Storage.Name, Qualities.Name, 
                 Main.Year, Countries.Name, Main.Length, Main.Screenplay, Main.Score, Main.Image """
