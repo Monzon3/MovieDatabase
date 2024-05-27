@@ -4,7 +4,7 @@ connect to different databases."""
 
 #from bson.objectid import ObjectId
 #from datetime import datetime
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from dotenv import load_dotenv
 import os
 import pymysql as sql
@@ -25,15 +25,15 @@ def connect_to_db():
                         passwd=sql_password, 
                         db=sql_database)
 
-    cursor = connector.cursor()
-    print(f'Connected to database \'{sql_database}\' \n')                                       
+    cursor = connector.cursor()                                      
 
     return connector, cursor
+
 
  ###################
  ## USERS METHODS ##
  ###################
-def create_user(user:dict):
+def create_user(user: dict):
     [conn, db] = connect_to_db()
     # Query to convert User_rank into its id
     sel_query = f"""SELECT User_ranks.id FROM MovieDB.User_ranks
@@ -43,33 +43,45 @@ def create_user(user:dict):
     hashed_password = crypt.hash(user['password'])
 
     # Full query
-    sql_query = f"""INSERT INTO MovieDB.Users (Name, Password, Email, 
-                    RankID, Disabled) VALUES 
-                    ('{user['username']}', '{hashed_password}', 
-                    '{user['email']}', ({sel_query}), 
-                    {user['disabled']});"""
+    try:
+        sql_query = f"""INSERT INTO MovieDB.Users (Name, Password, Email, 
+                        RankID, Disabled) VALUES 
+                        ('{user['username']}', '{hashed_password}', 
+                        '{user['email']}', ({sel_query}), 
+                        {user['disabled']});"""
 
-    db.execute(sql_query)
-    conn.commit()
+        db.execute(sql_query)
+        conn.commit()
+    
+    except sql.Error as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                            detail=f'{error.args[0]}: {error.args[1]}')
 
-    db.close()
-    conn.close()
+    finally:
+        db.close()
+        conn.close()
 
     return get_user(user['username'])
 
 
 def delete_user(user_id: int):
     [conn, db] = connect_to_db()
-    sql_query = f"""DELETE FROM MovieDB.Users
-                    WHERE Users.id={user_id};"""
+    user = get_user_by_id(user_id)
+    
+    if user:
+        sql_query = f"DELETE FROM MovieDB.Users WHERE Users.id={user_id};"
 
-    db.execute(sql_query)
-    conn.commit()
+        db.execute(sql_query)
+        conn.commit()
+        return_str = f"User with id = {user_id} has been deleted."
 
+    else:
+        return_str = f"No user found with id = {user_id}"
+    
     db.close()
     conn.close()
 
-    return f"User with id = {user_id} has been deleted." 
+    return return_str
 
 
 def get_all_users():
@@ -82,15 +94,8 @@ def get_all_users():
     db.execute(sql_query)
     res = db.fetchall()
 
-    users_list = []
-    for i in range(len(res)):
-        users_list.append(
-            {"id": res[i][0],
-             "username": res[i][1],
-             "email": res[i][2],
-             "user_rank": res[i][3],
-             "password": res[i][4],
-             "disabled": res[i][5]})
+    users_list = [{"id": res[i][0], "username": res[i][1], "email": res[i][2], "user_rank": res[i][3],
+                   "password": res[i][4], "disabled": res[i][5]} for i in range(len(res))]
 
     db.close()
     conn.close()
@@ -98,7 +103,7 @@ def get_all_users():
     return users_list
 
 
-def get_user(username:str):
+def get_user(username: str):
     [conn, db] = connect_to_db()
     sql_query = f"""SELECT Users.id, Users.Name, Users.Email, User_ranks.Name, 
                 Users.Password, Users.Disabled 
@@ -110,22 +115,21 @@ def get_user(username:str):
     res = db.fetchone()
 
     if res:
-        user = {"id": res[0],
-                "username": res[1],
-                "email": res[2],
-                "user_rank": res[3],
-                "password": res[4],
-                "disabled": res[5]}
+        user = {"id": res[0], "username": res[1], "email": res[2],
+                "user_rank": res[3], "password": res[4], "disabled": res[5]}
 
         db.close()
         conn.close()
 
         return user
     else:
+        db.close()
+        conn.close()
+
         return None
 
 
-def get_user_by_id(user_id:int):
+def get_user_by_id(user_id: int):
     [conn, db] = connect_to_db()
     sql_query = f"""SELECT Users.id, Users.Name, Users.Email, User_ranks.Name, 
                 Users.Password, Users.Disabled 
@@ -137,27 +141,24 @@ def get_user_by_id(user_id:int):
     res = db.fetchone()
 
     if res:
-        user = {"id": res[0],
-                "username": res[1],
-                "email": res[2],
-                "user_rank": res[3],
-                "password": res[4],
-                "disabled": res[5]}
+        user = {"id": res[0], "username": res[1], "email": res[2],
+                "user_rank": res[3], "password": res[4], "disabled": res[5]}
 
         db.close()
         conn.close()
 
         return user
     else:
+        db.close()
+        conn.close()
+
         return None
 
 
-def update_user(user_id: int, user_mod:dict):
-    print(user_mod)
+def update_user(user_id: int, user_mod: dict):
     # Create a 'new_values' dict to filter those optional values left blank by the user.
     # Otherwise, they would overwrite the real values in those fields, leaving them empty. 
     new_values = {k:user_mod[k] for k in user_mod.keys() if user_mod[k] != None}
-    print(new_values)
 
     [conn, db] = connect_to_db()
     
@@ -169,15 +170,19 @@ def update_user(user_id: int, user_mod:dict):
     set_str = set_str.replace("'True'", "TRUE")
     set_str = set_str.replace("'False'", "FALSE")
     # Full query
-    sql_query = f"""UPDATE MovieDB.Users SET {set_str}
-                    WHERE Users.id = {user_id};"""
+    try:
+        sql_query = f"UPDATE MovieDB.Users SET {set_str} WHERE Users.id = {user_id};"
 
-    print(sql_query)
+        db.execute(sql_query)
+        conn.commit()
 
-    db.execute(sql_query)
-    conn.commit()
-    db.close()
-    conn.close()
+    except sql.Error as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                            detail=f'{error.args[0]}: {error.args[1]}')
+
+    finally:
+        db.close()
+        conn.close()
  
     return get_user_by_id(user_id)
     
@@ -185,151 +190,151 @@ def update_user(user_id: int, user_mod:dict):
 #####################
 ## GENERAL METHODS ##
 #####################
-def add_director(director:dict):
+def add_director(director: dict):
     [conn, db] = connect_to_db()
 
-    sql_query = f"""INSERT INTO MovieDB.Directors (Name, CountryID) 
-                    VALUES ('{director['name']}', 
-                           (SELECT Countries.id FROM Countries 
-                           WHERE Countries.Name = '{director['country']}'));"""
     try:
+        sql_query = f"""INSERT INTO MovieDB.Directors (Name, CountryID) 
+                        VALUES ('{director['name']}', 
+                        (SELECT Countries.id FROM Countries 
+                        WHERE Countries.Name = '{director['country']}'));"""
         db.execute(sql_query)
         conn.commit()
     
     except sql.Error as error:
-        raise HTTPException (status_code = 406, detail=f'{error.args[0]}: {error.args[1]}')
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                            detail=f'{error.args[0]}: {error.args[1]}')
 
-    sql_query = f"""SELECT Directors.id, Directors.Name, Countries.Name FROM MovieDB.Directors
-                    INNER JOIN MovieDB.Countries ON Directors.CountryID = Countries.id 
-                    WHERE Directors.Name = '{director['name']}';"""
-    
-    db.execute(sql_query)
-    res = db.fetchone()
-    db.close()
-    conn.close()
+    else:
+        sql_query = f"""SELECT Directors.id, Directors.Name, Countries.Name FROM MovieDB.Directors
+                        INNER JOIN MovieDB.Countries ON Directors.CountryID = Countries.id 
+                        WHERE Directors.Name = '{director['name']}';"""
 
-    new_director = {"id": res[0], "name": res[1], "country": res[2]}
+        db.execute(sql_query)
+        res = db.fetchone()
 
-    return new_director
+        new_director = {"id": res[0], "name": res[1], "country": res[2]}
 
-def add_genre(genre:dict):
+        return new_director
+
+    finally:
+        db.close()
+        conn.close()
+
+def add_genre(genre: dict):
     [conn, db] = connect_to_db()
-
-    sql_query = f"""INSERT INTO MovieDB.Genres (Name, CategoryID) 
+    
+    try:
+        sql_query = f"""INSERT INTO MovieDB.Genres (Name, CategoryID) 
                     VALUES ('{genre['name']}', 
                     (SELECT Genre_Categories.id FROM MovieDB.Genre_Categories 
                     WHERE Genre_Categories.Name = '{genre['category']}'));"""
-    
-    try:
         db.execute(sql_query)
         conn.commit()
     
     except sql.Error as error:
-        raise HTTPException (status_code = 403, detail=f'{error.args[0]}: {error.args[1]}')
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                            detail=f'{error.args[0]}: {error.args[1]}')
 
-    sql_query = f"""SELECT Genres.id, Genres.Name, Genre_Categories.Name 
-                    FROM MovieDB.Genres 
-                    INNER JOIN Genre_Categories ON Genres.CategoryID = Genre_Categories.id
-                    WHERE Genres.Name = '{genre['name']}';"""
-    
-    db.execute(sql_query)
-    res = db.fetchone()
-    db.close()
-    conn.close()
-    
-    new_genre = {"id": res[0], "name": res[1], "category": res[2]}
-    
-    return new_genre
+    else:
+        sql_query = f"""SELECT Genres.id, Genres.Name, Genre_Categories.Name 
+                        FROM MovieDB.Genres 
+                        INNER JOIN Genre_Categories ON Genres.CategoryID = Genre_Categories.id
+                        WHERE Genres.Name = '{genre['name']}';"""
 
-def add_genre_category(category:dict):
+        db.execute(sql_query)
+        res = db.fetchone()
+
+        new_genre = {"id": res[0], "name": res[1], "category": res[2]}
+
+        return new_genre
+
+    finally:
+        db.close()
+        conn.close()        
+
+def add_genre_category(category: dict):
     [conn, db] = connect_to_db()
 
-    sql_query = f"""INSERT INTO MovieDB.Genre_Categories (Name) 
-                    VALUES ('{category['name']}');"""
     try:
+        sql_query = f"INSERT INTO MovieDB.Genre_Categories (Name) VALUES ('{category['name']}');"
         db.execute(sql_query)
         conn.commit()
     
     except sql.Error as error:
-        raise HTTPException (status_code = 406, detail=f'{error.args[0]}: {error.args[1]}')
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                            detail=f'{error.args[0]}: {error.args[1]}')
 
-    sql_query = f"""SELECT * FROM MovieDB.Genre_Categories 
-                  WHERE Genre_Categories.Name = '{category['name']}';"""
-    db.execute(sql_query)
-    res = db.fetchone()
-    db.close()
-    conn.close()
+    else:
+        sql_query = f"""SELECT * FROM MovieDB.Genre_Categories 
+                      WHERE Genre_Categories.Name = '{category['name']}';"""
+        db.execute(sql_query)
+        res = db.fetchone()
 
-    new_category = {"id": res[0], "name": res[1]}
+        new_category = {"id": res[0], "name": res[1]}
 
-    return new_category
+        return new_category
 
-def add_language(language:dict):
+    finally:
+        db.close()
+        conn.close()
+
+
+def add_language(language: dict):
     [conn, db] = connect_to_db()
 
-    sql_query = f"""INSERT INTO MovieDB.Languages (LangShort, LangComplete) 
+    try:
+        sql_query = f"""INSERT INTO MovieDB.Languages (LangShort, LangComplete) 
                     VALUES ('{language['short']}', '{language['complete']}');"""
-    try:
         db.execute(sql_query)
+        conn.commit()
     
     except sql.Error as error:
-        raise HTTPException (status_code = 403, detail=f'{error.args[0]}: {error.args[1]}')
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                            detail=f'{error.args[0]}: {error.args[1]}')
 
-    sql_query = f"""SELECT * FROM MovieDB.Languages 
-                  WHERE Languages.LangShort = '{language['short']}';"""
-    db.execute(sql_query)
-    res = db.fetchone()
-    languageInDB = {}
-    languageInDB['id'] = res[0]
-    languageInDB['short'] = res[1]
-    languageInDB['complete'] = res[2]
+    else:
+        sql_query = f"""SELECT * FROM MovieDB.Languages 
+                      WHERE Languages.LangShort = '{language['short']}';"""
+        db.execute(sql_query)
+        res = db.fetchone()
 
-    conn.commit()
+        new_language = {"id": res[0], "short": res[1], "complete": res[2]}
 
-    db.close()
-    conn.close()
+        return new_language
 
-    return languageInDB
+    finally:
+        db.close()
+        conn.close()
+
 
 def add_register(table, value):
     [conn, db] = connect_to_db()
 
-    sql_query = f"""INSERT INTO MovieDB.{table} (Name) VALUES ('{value}');"""
     try:
+        sql_query = f"INSERT INTO MovieDB.{table} (Name) VALUES ('{value}');"
         db.execute(sql_query)
         conn.commit()
     
     except sql.Error as error:
-        raise HTTPException (status_code = 406, detail=f'{error.args[0]}: {error.args[1]}')
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                            detail=f'{error.args[0]}: {error.args[1]}')
+    
+    else:
+        sql_query = f"SELECT {table}.id, {table}.Name FROM MovieDB.{table} WHERE Name = '{value}';"
+        db.execute(sql_query)
+        res = db.fetchone()
 
-    sql_query = f"SELECT {table}.id, {table}.Name FROM MovieDB.{table} WHERE Name = '{value}';"
-    db.execute(sql_query)
-    res = db.fetchone()
-    db.close()
-    conn.close()
+        new_obj = {"id": res[0], "name": res[1]}
 
-    new_obj = {"id": res[0], "name": res[1]}
-
-    return new_obj
-
-
-def delete_register(id:int, table:str):
-    [conn, db] = connect_to_db()
-
-    # Get info of the user to delete
-    db.execute(f'''SELECT Name FROM MovieDB.Users WHERE id="{id}";''')
-    deleted_user = get_user(db.fetchone()[0])
-
-    db.execute(f'''DELETE FROM {table} WHERE id={id};''')
-    conn.commit()
-
-    db.close()
-    conn.close()
-
-    return deleted_user
+        return new_obj
+    
+    finally:
+        db.close()
+        conn.close()
 
 
-def get_all(table:str):
+def get_all(table: str):
     [conn, db] = connect_to_db()
 
     if table == "Genres":
@@ -342,7 +347,7 @@ def get_all(table:str):
                         Countries.Name FROM MovieDB.Directors
                         LEFT JOIN MovieDB.Countries ON Directors.CountryID = Countries.id;"""
     else:
-        sql_query =f"""SELECT * FROM MovieDB.{table};"""
+        sql_query =f"SELECT * FROM MovieDB.{table};"
 
     db.execute(sql_query)
     res = db.fetchall()
@@ -362,7 +367,7 @@ def get_all(table:str):
     return obj_list
 
 
-def get_all_films(field: str, order_by:str):
+def get_all_films(field: str, order_by: str):
     [conn, db] = connect_to_db()
 
     sql_query = f"""SELECT Main.id, Main.Title, Main.OriginalTitle, Storage.Name, Qualities.Name, 
@@ -376,21 +381,10 @@ def get_all_films(field: str, order_by:str):
     db.execute(sql_query)
     res = db.fetchall()
 
-    films = []
-    for i in range(len(res)):
-        new_film = {'id': res[i][0],
-                    'title': res[i][1],
-                    'origTitle': res[i][2],
-                    'storageDevice': res[i][3],
-                    'quality': res[i][4],
-                    'year': res[i][5],
-                    'country': res[i][6],
-                    'length': res[i][7],
-                    'screenplay': res[i][8],
-                    'score': res[i][9],
-                    'img': res[i][10]}
-
-        films.append(new_film)
+    films = [{"id": res[i][0], "title": res[i][1], "origTitle": res[i][2],
+              "storageDevice": res[i][3], "quality": res[i][4], "year": res[i][5],
+              "country": res[i][6], "length": res[i][7], "screenplay": res[i][8],
+              "score": res[i][9], "img": res[i][10]} for i in range(len(res))]
 
     db.close()
     conn.close()
@@ -416,11 +410,11 @@ def get_combined(table, filter_col, value):
         col = "StorageID"
 
     [conn, db] = connect_to_db()
-    sql_query = f'''SELECT DISTINCT {table}.id, {table}.Name
+    sql_query = f"""SELECT DISTINCT {table}.id, {table}.Name
                     FROM MovieDB.Main
                     INNER JOIN MovieDB.{table} ON Main.{col}={table}.id
                     WHERE Main.{filter_col} = {value}
-                    ORDER BY {table}.Name;'''
+                    ORDER BY {table}.Name;"""
 
     db.execute(sql_query)
     res = db.fetchall()
@@ -433,7 +427,7 @@ def get_combined(table, filter_col, value):
     return obj_list
 
 
-def get_film(film:dict):
+def get_film(film: dict):
     # First of all, define SQL query depending on filled fields
     flag = 0
     titleAux = ""
@@ -545,20 +539,10 @@ def get_film(film:dict):
     db.execute(sql_query)
     res = db.fetchall()
 
-    films = []
-    for i in range(len(res)):
-        new_film = {'id': res[i][0],
-                    'title': res[i][1],
-                    'origTitle': res[i][2],
-                    'storageDevice': res[i][3],
-                    'quality': res[i][4],
-                    'year': res[i][5],
-                    'country': res[i][6],
-                    'length': res[i][7],
-                    'screenplay': res[i][8],
-                    'score': res[i][9],
-                    'img': res[i][10]}
-        films.append(new_film)
+    films = [{"id": res[i][0], "title": res[i][1], "origTitle": res[i][2],
+              "storageDevice": res[i][3], "quality": res[i][4], "year": res[i][5],
+              "country": res[i][6], "length": res[i][7], "screenplay": res[i][8],
+              "score": res[i][9], "img": res[i][10]} for i in range(len(res))]
     
     db.close()
     conn.close()
@@ -568,7 +552,7 @@ def get_film(film:dict):
 
 def get_object(table, value):
     [conn, db] = connect_to_db()
-    sql_query = f'''SELECT {table}.id FROM MovieDB.{table} WHERE {table}.Name = "{value}";'''
+    sql_query = f"SELECT {table}.id FROM MovieDB.{table} WHERE {table}.Name = '{value}';"
     
     db.execute(sql_query)
     res = db.fetchone()
@@ -576,7 +560,7 @@ def get_object(table, value):
     if res: 
         data = res[0]
     else: 
-        data = ''
+        data = ""
 
     db.close()
     conn.close()
