@@ -30,6 +30,11 @@ def connect_to_db():
     return connector, cursor
 
 
+def disconnect_from_db(connector, cursor):
+    cursor.close()
+    connector.close()
+
+
  ###################
  ## USERS METHODS ##
  ###################
@@ -58,8 +63,7 @@ def create_user(user: dict):
                             detail=f'{error.args[0]}: {error.args[1]}')
 
     finally:
-        db.close()
-        conn.close()
+        disconnect_from_db(conn, db)
 
     return get_user(user['username'])
 
@@ -78,8 +82,7 @@ def delete_user(user_id: int):
     else:
         return_str = f"No user found with id = {user_id}"
     
-    db.close()
-    conn.close()
+    disconnect_from_db(conn, db)
 
     return return_str
 
@@ -97,8 +100,7 @@ def get_all_users():
     users_list = [{"id": res[i][0], "username": res[i][1], "email": res[i][2], "user_rank": res[i][3],
                    "password": res[i][4], "disabled": res[i][5]} for i in range(len(res))]
 
-    db.close()
-    conn.close()
+    disconnect_from_db(conn, db)
 
     return users_list
 
@@ -118,13 +120,11 @@ def get_user(username: str):
         user = {"id": res[0], "username": res[1], "email": res[2],
                 "user_rank": res[3], "password": res[4], "disabled": res[5]}
 
-        db.close()
-        conn.close()
+        disconnect_from_db(conn, db)
 
         return user
     else:
-        db.close()
-        conn.close()
+        disconnect_from_db(conn, db)
 
         return None
 
@@ -144,13 +144,11 @@ def get_user_by_id(user_id: int):
         user = {"id": res[0], "username": res[1], "email": res[2],
                 "user_rank": res[3], "password": res[4], "disabled": res[5]}
 
-        db.close()
-        conn.close()
+        disconnect_from_db(conn, db)
 
         return user
     else:
-        db.close()
-        conn.close()
+        disconnect_from_db(conn, db)
 
         return None
 
@@ -181,8 +179,7 @@ def update_user(user_id: int, user_mod: dict):
                             detail=f'{error.args[0]}: {error.args[1]}')
 
     finally:
-        db.close()
-        conn.close()
+        disconnect_from_db(conn, db)
  
     return get_user_by_id(user_id)
     
@@ -218,8 +215,7 @@ def add_director(director: dict):
         return new_director
 
     finally:
-        db.close()
-        conn.close()
+        disconnect_from_db(conn, db)
 
 def add_genre(genre: dict):
     [conn, db] = connect_to_db()
@@ -250,8 +246,8 @@ def add_genre(genre: dict):
         return new_genre
 
     finally:
-        db.close()
-        conn.close()        
+        disconnect_from_db(conn, db)        
+
 
 def add_genre_category(category: dict):
     [conn, db] = connect_to_db()
@@ -276,8 +272,7 @@ def add_genre_category(category: dict):
         return new_category
 
     finally:
-        db.close()
-        conn.close()
+        disconnect_from_db(conn, db)
 
 
 def add_language(language: dict):
@@ -304,8 +299,7 @@ def add_language(language: dict):
         return new_language
 
     finally:
-        db.close()
-        conn.close()
+        disconnect_from_db(conn, db)
 
 
 def add_register(table, value):
@@ -330,8 +324,7 @@ def add_register(table, value):
         return new_obj
     
     finally:
-        db.close()
-        conn.close()
+        disconnect_from_db(conn, db)
 
 
 def get_all(table: str):
@@ -361,8 +354,7 @@ def get_all(table: str):
     elif table == "Languages":
         obj_list = [{"id": res[i][0], "short": res[i][1], "complete": res[i][2]} for i in range(len(res))]
 
-    db.close()
-    conn.close()
+    disconnect_from_db(conn, db)
 
     return obj_list
 
@@ -386,8 +378,7 @@ def get_all_films(field: str, order_by: str):
               "country": res[i][6], "length": res[i][7], "screenplay": res[i][8],
               "score": res[i][9], "img": res[i][10]} for i in range(len(res))]
 
-    db.close()
-    conn.close()
+    disconnect_from_db(conn, db)
 
     return films
 
@@ -421,8 +412,7 @@ def get_combined(table, filter_col, value):
 
     obj_list = [{"id": res[i][0], "name": res[i][1]} for i in range(len(res))]
 
-    db.close()
-    conn.close()
+    disconnect_from_db(conn, db)
 
     return obj_list
 
@@ -544,8 +534,7 @@ def get_film(film: dict):
               "country": res[i][6], "length": res[i][7], "screenplay": res[i][8],
               "score": res[i][9], "img": res[i][10]} for i in range(len(res))]
     
-    db.close()
-    conn.close()
+    disconnect_from_db(conn, db)
 
     return films
 
@@ -562,7 +551,6 @@ def get_object(table, value):
     else: 
         data = ""
 
-    db.close()
-    conn.close()
+    disconnect_from_db(conn, db)
 
     return data
