@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 import functions.dbConnector as dbConnector
 from models.users import Token, AdminUpdatedUser, UpdatedUser, User, UserSecure
@@ -38,12 +38,21 @@ async def create_new_user(new_user: User):
 @usr.put("/{id}", response_model=User, dependencies=[Depends(check_admin)],
                   status_code=status.HTTP_200_OK)
 async def update_user(updated_info: AdminUpdatedUser, user_id: int):
-    return dbConnector.update_user(user_id=user_id, user_mod=updated_info.dict())
+    user = dbConnector.get_user_by_id(user_id)
+    if user:
+        return dbConnector.update_user(user_id=user_id, user_mod=updated_info.dict())
+    else:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                            detail=f"No user found with id = {user_id}")
 
 # Delete user entry
 @usr.delete("/{id}", dependencies=[Depends(check_admin)], status_code=status.HTTP_200_OK)
-async def delete_user(id: int):
-    return dbConnector.delete_user(user_id=id)
+async def delete_user(user_id: int):
+    user = dbConnector.get_user_by_id(user_id)
+    if user:
+        return dbConnector.delete_user(user_id)
+    else:
+        return f"No user found with id = {user_id}"
 
 # Login to get an access token                             
 @usr.post("/token", response_model=Token)

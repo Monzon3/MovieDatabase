@@ -68,21 +68,20 @@ def create_user(user: dict):
 
 def delete_user(user_id: int):
     [conn, db] = connect_to_db()
-    user = get_user_by_id(user_id)
     
-    if user:
+    try:
         sql_query = f"DELETE FROM MovieDB.Users WHERE Users.id={user_id};"
 
         db.execute(sql_query)
         conn.commit()
-        return_str = f"User with id = {user_id} has been deleted."
 
-    else:
-        return_str = f"No user found with id = {user_id}"
-    
+    except sql.Error as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                            detail=f'{error.args[0]}: {error.args[1]}')
+        
     disconnect_from_db(conn, db)
 
-    return return_str
+    return f"User with id = {user_id} has been deleted."
 
 
 def get_all_users():

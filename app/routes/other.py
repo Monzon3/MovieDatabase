@@ -35,7 +35,17 @@ async def directors():
 @oth.post("/directors", response_model=Director, dependencies=[Depends(check_admin)],
           status_code=status.HTTP_201_CREATED)
 async def add_director(director: Director):
-    return dbConnector.add_director(director.dict())
+    [_, db] = dbConnector.connect_to_db()
+    db.execute(f"SELECT Countries.id FROM Countries WHERE Countries.Name='{director.country}'")
+    res = db.fetchone()
+    if director.country == None:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                            detail="'Country' cannot be empty.")    
+    if res:
+        return dbConnector.add_director(director.dict())
+    else:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                            detail=f"No country named '{director.country}' found in the database.")
 
 @oth.get("/genres", response_model=list[Genre], dependencies=[Depends(get_current_active_user)],
          status_code=status.HTTP_200_OK)
