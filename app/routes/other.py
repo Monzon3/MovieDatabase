@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.encoders import jsonable_encoder as json
 import functions.dbConnector as dbConnector
 from models.other import *
 from services.auth import check_admin, get_current_active_user
@@ -36,7 +35,7 @@ async def directors():
 @oth.post("/directors", response_model=DirectorInDB, dependencies=[Depends(check_admin)],
           status_code=status.HTTP_201_CREATED)
 async def add_director(director: Director):
-    return dbConnector.add_director(json(director))
+    return dbConnector.add_director(director.dict())
 
 @oth.get("/genres", response_model=list[GenreInDB], dependencies=[Depends(get_current_active_user)],
          status_code=status.HTTP_200_OK)
@@ -46,12 +45,12 @@ async def genres():
 @oth.post("/genre_categories", response_model=GenreCategoryInDB, dependencies=[Depends(check_admin)],
           status_code=status.HTTP_201_CREATED)
 async def add_genre_category(category: GenreCategory):
-    return dbConnector.add_genre_category(json(category))
+    return dbConnector.add_genre_category(category.dict())
 
 @oth.post("/genres", response_model=GenreInDB, dependencies=[Depends(check_admin)],
           status_code=status.HTTP_201_CREATED)
 async def add_genre(genre: Genre):
-    return dbConnector.add_genre(json(genre))
+    return dbConnector.add_genre(genre.dict())
 
 @oth.get("/languages", response_model=list[LanguageInDB], dependencies=[Depends(get_current_active_user)],
          status_code=status.HTTP_200_OK)
@@ -61,7 +60,7 @@ async def languages():
 @oth.post("/languages", response_model=LanguageInDB, dependencies=[Depends(check_admin)],
           status_code=status.HTTP_201_CREATED)
 async def add_language(language: Language):
-    return dbConnector.add_language(json(language))
+    return dbConnector.add_language(language.dict())
 
 @oth.get("/qualities", response_model=list[QualityInDB], dependencies=[Depends(get_current_active_user)],
          status_code=status.HTTP_200_OK)
