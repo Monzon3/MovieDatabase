@@ -36,6 +36,3 @@ class Film(BaseModel):
     score1: Optional[int] = Field(ge=0, le=10, default=None)
     score2: Optional[int] = Field(ge=0, le=10, default=None)
     #genre: Optional[str] = Field(min_length=0, max_length=300, default="")
-
-class FilmInDB(Film):
-    id: int

@@ -20,6 +20,7 @@ class AdminUpdatedUser(UpdatedUser):
 
 # UserSecure does not have the password attribute, even if it is hashed
 class UserSecure(BaseModel):
+    id: Optional[int] = None
     username: str = Field(description="The username cannot be empty", 
                           example="example_name",
                           pattern=r"[0-9A-Za-z_]", 
@@ -31,9 +32,6 @@ class UserSecure(BaseModel):
 
 class User(UserSecure):
     password: str = Field(description="The password cannot be empty", min_length=1)
-
-class UserInDB(UserSecure):
-    id: int
 
 
 # Token-related classes
