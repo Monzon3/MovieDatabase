@@ -29,13 +29,13 @@ async def get_all_users():
     return dbConnector.get_all_users()
 
 # Insert a new user into the database                 
-@usr.post("/", response_model=User, dependencies=[Depends(check_admin)],
+@usr.post("/", response_model=UserSecure, dependencies=[Depends(check_admin)],
                status_code=status.HTTP_201_CREATED)
 async def create_new_user(new_user: User):
     return dbConnector.create_user(new_user.dict())
 
 # Update user entry
-@usr.put("/{id}", response_model=User, dependencies=[Depends(check_admin)],
+@usr.put("/{id}", response_model=UserSecure, dependencies=[Depends(check_admin)],
                   status_code=status.HTTP_200_OK)
 async def update_user(updated_info: AdminUpdatedUser, user_id: int):
     user = dbConnector.get_user_by_id(user_id)
