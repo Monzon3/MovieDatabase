@@ -32,7 +32,7 @@ async def get_all_users():
 @usr.post("/", response_model=UserSecure, dependencies=[Depends(check_admin)],
                status_code=status.HTTP_201_CREATED)
 async def create_new_user(new_user: User):
-    return dbConnector.create_user(new_user.dict())
+    return dbConnector.create_user(new_user)
 
 # Update user entry
 @usr.put("/{id}", response_model=UserSecure, dependencies=[Depends(check_admin)],

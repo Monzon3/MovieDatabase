@@ -42,7 +42,7 @@ async def add_director(director: Director):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
                             detail="'Country' cannot be empty.")    
     if res:
-        return dbConnector.add_director(director.dict())
+        return dbConnector.add_director(director)
     else:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
                             detail=f"No country named '{director.country}' found in the database.")
@@ -55,12 +55,12 @@ async def genres():
 @oth.post("/genre_categories", response_model=GenreCategory, dependencies=[Depends(check_admin)],
           status_code=status.HTTP_201_CREATED)
 async def add_genre_category(category: GenreCategory):
-    return dbConnector.add_genre_category(category.dict())
+    return dbConnector.add_genre_category(category)
 
 @oth.post("/genres", response_model=Genre, dependencies=[Depends(check_admin)],
           status_code=status.HTTP_201_CREATED)
 async def add_genre(genre: Genre):
-    return dbConnector.add_genre(genre.dict())
+    return dbConnector.add_genre(genre)
 
 @oth.get("/languages", response_model=list[Language], dependencies=[Depends(get_current_active_user)],
          status_code=status.HTTP_200_OK)
@@ -70,7 +70,7 @@ async def languages():
 @oth.post("/languages", response_model=Language, dependencies=[Depends(check_admin)],
           status_code=status.HTTP_201_CREATED)
 async def add_language(language: Language):
-    return dbConnector.add_language(language.dict())
+    return dbConnector.add_language(language)
 
 @oth.get("/qualities", response_model=list[Quality], dependencies=[Depends(get_current_active_user)],
          status_code=status.HTTP_200_OK)

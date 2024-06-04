@@ -4,6 +4,9 @@ connect to different databases."""
 
 from fastapi import HTTPException, status
 from dotenv import load_dotenv
+from models.films import Film
+from models.other import Director, Genre, GenreCategory, Language
+from models.users import User
 import os
 import pymysql as sql
 from services.auth import crypt
@@ -36,22 +39,22 @@ def disconnect_from_db(connector, cursor):
  ###################
  ## USERS METHODS ##
  ###################
-def create_user(user: dict):
+def create_user(user: User):
     [conn, db] = connect_to_db()
     # Query to convert User_rank into its id
     sel_query = f"""SELECT User_ranks.id FROM MovieDB.User_ranks
-                    WHERE User_ranks.Name = '{user['user_rank']}'"""
+                    WHERE User_ranks.Name = '{user.user_rank}'"""
     
     # Hashed password to store in the database for better security
-    hashed_password = crypt.hash(user['password'])
+    hashed_password = crypt.hash(user.password)
 
     # Full query
     try:
         sql_query = f"""INSERT INTO MovieDB.Users (Name, Password, Email, 
                         RankID, Disabled) VALUES 
-                        ('{user['username']}', '{hashed_password}', 
-                        '{user['email']}', ({sel_query}), 
-                        {user['disabled']});"""
+                        ('{user.username}', '{hashed_password}', 
+                        '{user.email}', ({sel_query}), 
+                        {user.disabled});"""
 
         db.execute(sql_query)
         conn.commit()
@@ -63,7 +66,7 @@ def create_user(user: dict):
     finally:
         disconnect_from_db(conn, db)
 
-    return get_user(user['username'])
+    return get_user(user.username)
 
 
 def delete_user(user_id: int):
@@ -184,14 +187,14 @@ def update_user(user_id: int, user_mod: dict):
 #####################
 ## GENERAL METHODS ##
 #####################
-def add_director(director: dict):
+def add_director(director: Director):
     [conn, db] = connect_to_db()
 
     try:
         sql_query = f"""INSERT INTO MovieDB.Directors (Name, CountryID) 
-                        VALUES ('{director['name']}', 
+                        VALUES ('{director.name}', 
                         (SELECT Countries.id FROM Countries 
-                        WHERE Countries.Name = '{director['country']}'));"""
+                        WHERE Countries.Name = '{director.country}'));"""
         db.execute(sql_query)
         conn.commit()
     
@@ -202,7 +205,7 @@ def add_director(director: dict):
     else:
         sql_query = f"""SELECT Directors.id, Directors.Name, Countries.Name FROM MovieDB.Directors
                         INNER JOIN MovieDB.Countries ON Directors.CountryID = Countries.id 
-                        WHERE Directors.Name = '{director['name']}';"""
+                        WHERE Directors.Name = '{director.name}';"""
 
         db.execute(sql_query)
         res = db.fetchone()
@@ -214,14 +217,14 @@ def add_director(director: dict):
     finally:
         disconnect_from_db(conn, db)
 
-def add_genre(genre: dict):
+def add_genre(genre: Genre):
     [conn, db] = connect_to_db()
     
     try:
         sql_query = f"""INSERT INTO MovieDB.Genres (Name, CategoryID) 
-                    VALUES ('{genre['name']}', 
+                    VALUES ('{genre.name}', 
                     (SELECT Genre_Categories.id FROM MovieDB.Genre_Categories 
-                    WHERE Genre_Categories.Name = '{genre['category']}'));"""
+                    WHERE Genre_Categories.Name = '{genre.category}'));"""
         db.execute(sql_query)
         conn.commit()
     
@@ -233,7 +236,7 @@ def add_genre(genre: dict):
         sql_query = f"""SELECT Genres.id, Genres.Name, Genre_Categories.Name 
                         FROM MovieDB.Genres 
                         INNER JOIN Genre_Categories ON Genres.CategoryID = Genre_Categories.id
-                        WHERE Genres.Name = '{genre['name']}';"""
+                        WHERE Genres.Name = '{genre.name}';"""
 
         db.execute(sql_query)
         res = db.fetchone()
@@ -246,11 +249,11 @@ def add_genre(genre: dict):
         disconnect_from_db(conn, db)        
 
 
-def add_genre_category(category: dict):
+def add_genre_category(category: GenreCategory):
     [conn, db] = connect_to_db()
 
     try:
-        sql_query = f"INSERT INTO MovieDB.Genre_Categories (Name) VALUES ('{category['name']}');"
+        sql_query = f"INSERT INTO MovieDB.Genre_Categories (Name) VALUES ('{category.name}');"
         db.execute(sql_query)
         conn.commit()
     
@@ -260,7 +263,7 @@ def add_genre_category(category: dict):
 
     else:
         sql_query = f"""SELECT * FROM MovieDB.Genre_Categories 
-                      WHERE Genre_Categories.Name = '{category['name']}';"""
+                      WHERE Genre_Categories.Name = '{category.name}';"""
         db.execute(sql_query)
         res = db.fetchone()
 
@@ -272,12 +275,12 @@ def add_genre_category(category: dict):
         disconnect_from_db(conn, db)
 
 
-def add_language(language: dict):
+def add_language(language: Language):
     [conn, db] = connect_to_db()
 
     try:
         sql_query = f"""INSERT INTO MovieDB.Languages (LangShort, LangComplete) 
-                    VALUES ('{language['short']}', '{language['complete']}');"""
+                    VALUES ('{language.short}', '{language.complete}');"""
         db.execute(sql_query)
         conn.commit()
     
@@ -287,7 +290,7 @@ def add_language(language: dict):
 
     else:
         sql_query = f"""SELECT * FROM MovieDB.Languages 
-                      WHERE Languages.LangShort = '{language['short']}';"""
+                      WHERE Languages.LangShort = '{language.short}';"""
         db.execute(sql_query)
         res = db.fetchone()
 
@@ -414,7 +417,7 @@ def get_combined(table, filter_col, value):
     return obj_list
 
 
-def get_film(film: dict):
+def get_film(film: Film):
     # First of all, define SQL query depending on filled fields
     flag = 0
     titleAux = ""
@@ -427,60 +430,60 @@ def get_film(film: dict):
     screenplayAux = ""
     scoreAux = ""
 
-    if film['title'] != "":
-        titleAux = f"Title LIKE '%{film['title']}%'"
+    if film.title != "":
+        titleAux = f"Title LIKE '%{film.title}%'"
         flag = 1
     
-    if film['origTitle'] != "" and flag == 1:
-        origTitleAux = f" AND OriginalTitle LIKE '%{film['origTitle']}%'"
-    elif  film['origTitle'] != "" and flag == 0:
-        origTitleAux = f"OriginalTitle LIKE '%{film['origTitle']}%'"
+    if film.origTitle != "" and flag == 1:
+        origTitleAux = f" AND OriginalTitle LIKE '%{film.origTitle}%'"
+    elif  film.origTitle != "" and flag == 0:
+        origTitleAux = f"OriginalTitle LIKE '%{film.origTitle}%'"
         flag = 1
 
-    if film['storageDevice'] != "" and flag == 1:
-        storageAux = f" AND Storage.Name = '{film['storageDevice']}'"
+    if film.storageDevice != "" and flag == 1:
+        storageAux = f" AND Storage.Name = '{film.storageDevice}'"
         
-    elif film['storageDevice'] != "" and flag == 0:
-        storageAux = f"Storage.Name = '{film['storageDevice']}'"
+    elif film.storageDevice != "" and flag == 0:
+        storageAux = f"Storage.Name = '{film.storageDevice}'"
         flag = 1
 
-    if film['quality'] != "" and flag == 1:
-        qualityAux = f" AND Qualities.Name = '{film['quality']}'"
+    if film.quality != "" and flag == 1:
+        qualityAux = f" AND Qualities.Name = '{film.quality}'"
         
-    elif film['quality'] != "" and flag == 0:
-        qualityAux = f"Qualities.Name = '{film['quality']}'"
+    elif film.quality != "" and flag == 0:
+        qualityAux = f"Qualities.Name = '{film.quality}'"
         flag = 1
 
-    if film['year1'] != None and film['year2'] == None and flag == 1:
-        yearAux = f" AND Year = {film['year1']}"
-    elif  film['year1'] != None and film['year2'] == None and flag == 0:
-        yearAux = f"Year = {film['year1']}"
+    if film.year1 != None and film.year2 == None and flag == 1:
+        yearAux = f" AND Year = {film.year1}"
+    elif  film.year1 != None and film.year2 == None and flag == 0:
+        yearAux = f"Year = {film.year1}"
         flag = 1
-    elif film['year1'] != None and film['year2'] != None and flag == 1:
-        yearAux = f" AND Year BETWEEN {film['year1']} AND {film['year2']}"
-    elif film['year1'] != None and film['year2'] != None and flag == 0:
-        yearAux = f"Year BETWEEN {film['year1']} AND {film['year2']}"
+    elif film.year1 != None and film.year2 != None and flag == 1:
+        yearAux = f" AND Year BETWEEN {film.year1} AND {film.year2}"
+    elif film.year1 != None and film.year2 != None and flag == 0:
+        yearAux = f"Year BETWEEN {film.year1} AND {film.year2}"
         flag = 1
 
-    if film['country'] != "" and flag == 1:
-        countryAux = f" AND Countries.Name = '{film['country']}'"
+    if film.country != "" and flag == 1:
+        countryAux = f" AND Countries.Name = '{film.country}'"
         
-    elif film['country'] != "" and flag == 0:
-        countryAux = f"Countries.Name = '{film['country']}'"
+    elif film.country != "" and flag == 0:
+        countryAux = f"Countries.Name = '{film.country}'"
         flag = 1
 
-    if film['length'] != "":
-        if film['length'] == "Cortos":
+    if film.length != "":
+        if film.length == "Cortos":
             lengthAux = f"Main.Length BETWEEN 0 AND 30"
-        elif film['length'] == "Menos de 80 minutos":
+        elif film.length == "Menos de 80 minutos":
             lengthAux = f"Main.Length BETWEEN 31 AND 80"
-        elif film['length'] == "90 minutos":
+        elif film.length == "90 minutos":
             lengthAux = f"Main.Length BETWEEN 81 AND 105"
-        elif film['length'] == "120 minutos":
+        elif film.length == "120 minutos":
             lengthAux = f"Main.Length BETWEEN 106 AND 135"
-        elif film['length'] == "Entre 120 y 180 minutos":
+        elif film.length == "Entre 120 y 180 minutos":
             lengthAux = f"Main.Length BETWEEN 121 AND 180"
-        elif film['length'] == "Más de 180 minutos":
+        elif film.length == "Más de 180 minutos":
             lengthAux = f"Main.Length > 181" 
 
         if flag == 1:
@@ -488,22 +491,22 @@ def get_film(film: dict):
         else:
             flag = 0
 
-    if film['screenplay'] != "" and flag == 1:
-        screenplayAux = f" AND Screenplay LIKE '%{film['screenplay']}%'"
-    elif  film['screenplay'] != "" and flag == 0:
-        screenplayAux = f"screenplay LIKE '%{film['screenplay']}%'"
+    if film.screenplay != "" and flag == 1:
+        screenplayAux = f" AND Screenplay LIKE '%{film.screenplay}%'"
+    elif  film.screenplay != "" and flag == 0:
+        screenplayAux = f"screenplay LIKE '%{film.screenplay}%'"
         flag = 1
 
-    if film['score1'] != None and film['score2'] == None and flag == 1:
-        scoreAux = f" AND Score = {film['score1']}"
-    elif  film['score1'] != None and film['score2'] == None and flag == 0:
-        scoreAux = f"Score = {film['score1']}"
+    if film.score1 != None and film['score2'] == None and flag == 1:
+        scoreAux = f" AND Score = {film.score1}"
+    elif  film.score1 != None and film['score2'] == None and flag == 0:
+        scoreAux = f"Score = {film.score1}"
         flag = 1
-    elif film['score1'] != None and film['score2'] != None and flag == 1:
-        scoreAux = f" AND Score BETWEEN {film['score1']} AND {film['score2']}"
+    elif film.score1 != None and film['score2'] != None and flag == 1:
+        scoreAux = f" AND Score BETWEEN {film.score1} AND {film['score2']}"
         flag = 1
-    elif film['score1'] != None and film['score2'] != None and flag == 0:
-        scoreAux = f"Score BETWEEN {film['score1']} AND {film['score2']}"
+    elif film.score1 != None and film['score2'] != None and flag == 0:
+        scoreAux = f"Score BETWEEN {film.score1} AND {film['score2']}"
 
     if titleAux == "" and origTitleAux == "" and storageAux == "" and qualityAux == "" and \
        yearAux == "" and countryAux == "" and lengthAux == "" and scoreAux == "" \
