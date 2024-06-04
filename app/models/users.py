@@ -23,15 +23,16 @@ class UserSecure(BaseModel):
     id: Optional[int] = None
     username: str = Field(description="The username cannot be empty", 
                           example="example_name",
-                          pattern=r"[0-9A-Za-z_]", 
+                          pattern=r"^[0-9A-Za-z_]+$", 
                           min_length=1, max_length=20)
     email: str = Field(example="valid_email@server.com",
                        pattern=r"^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$")
-    user_rank: Literal["admin", "powerUser", "user"]
+    user_rank: Literal["admin", "powerUser", "user"] = "user"
     disabled: Optional[bool] = False
 
 class User(UserSecure):
-    password: str = Field(description="The password cannot be empty", min_length=1)
+    password: str = Field(description="The password cannot be empty", 
+                          pattern='^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])[a-zA-Z0-9!"·#$%&()]{8,16}$', min_length=1)
 
 
 # Token-related classes
