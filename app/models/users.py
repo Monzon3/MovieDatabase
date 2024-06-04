@@ -31,8 +31,9 @@ class UserSecure(BaseModel):
     disabled: Optional[bool] = False
 
 class User(UserSecure):
-    password: str = Field(description="The password cannot be empty", 
-                          pattern='^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])[a-zA-Z0-9!"·#$%&()]{8,16}$', min_length=1)
+    password: str = Field(description="""The password must have between 8 and 16 characters, uppercase, lowercase and
+                          !·#$%&() symbols are accepted.""", 
+                          pattern="^[a-zA-Z0-9!·#$%&()]{8,16}$", min_length=1)
 
 
 # Token-related classes
